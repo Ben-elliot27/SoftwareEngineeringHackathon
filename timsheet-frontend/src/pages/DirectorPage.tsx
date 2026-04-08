@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import WeeklyTimesheetPage from "./ViewTimesheet";
 import {
   BadgeCheck,
   CalendarDays,
@@ -38,10 +39,12 @@ type UiEntry = {
 };
 
 const pageSize = 6;
+const [selectedEntry, setSelectedEntry] = useState<UiEntry | null>(null);
 
 function cx(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(' ');
 }
+
 
 function mapStatus(status: EntryStatus): Status {
   if (status === 'approved') return 'Approved';
@@ -368,6 +371,19 @@ export default function TimesheetApprovals() {
     return <AccessDenied onLogout={logout} />;
   }
 
+  if (selectedEntry) {
+  return (
+    <WeeklyTimesheetPage
+      employeeName={selectedEntry.user}
+      status={selectedEntry.status}
+      weekLabel={selectedEntry.date}
+      onBack={() => setSelectedEntry(null)}
+      onApprove={() => approveOne(selectedEntry.id)}
+      onReject={() => rejectOne(selectedEntry.id)}
+    />
+  );
+}
+
   return (
     <div className="min-h-screen bg-[#eef1f6] text-slate-900">
       <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sm:px-8">
@@ -637,13 +653,13 @@ export default function TimesheetApprovals() {
                         <div className="font-medium text-slate-900">{entry.hours}</div>
                       </div>
                       <div className="flex items-end justify-end gap-2">
-                        <Link
-                          to="/view-timesheet"
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Link>
+                       <button
+                      onClick={() => setSelectedEntry(entry)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View
+                    </button>
 
                       </div>
                     </div>
