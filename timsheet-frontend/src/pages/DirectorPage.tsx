@@ -128,20 +128,6 @@ function MetricCard({
   );
 }
 
-function TopNavButton({ active, children }: { active?: boolean; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      className={cx(
-        'rounded-full px-4 py-2 text-sm font-medium transition',
-        active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ActionMenu({
   entry,
   open,
@@ -194,7 +180,7 @@ function ActionMenu({
 
 function AccessDenied() {
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-slate-100 px-6 py-10">
       <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-700">
           <BadgeCheck className="h-4 w-4" />
@@ -289,26 +275,9 @@ export default function TimesheetApprovals() {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef1f6] p-4 text-slate-900 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(11,42,74,0.08)]">
-        {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#c51d4a] text-[11px] font-semibold text-white">CGI</div>
-            <div>
-              <div className="text-sm font-semibold text-slate-900">CGI</div>
-              <div className="text-xs text-slate-500">Timesheet Management</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 rounded-full bg-slate-100 p-1">
-            <TopNavButton active>Approvals</TopNavButton>
-            <TopNavButton>Audit Log</TopNavButton>
-          </div>
-        </div>
-
-        {/* Hero */}
-        <div className="bg-gradient-to-r from-[#c51d4a] via-[#cc2269] to-[#6f2dbd] px-6 py-10 text-white sm:px-8 sm:py-12">
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <div className="bg-gradient-to-r from-[#d71920] via-[#c81d5a] to-[#6f2dbd] text-white">
+        <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr] lg:items-center">
             <div className="max-w-2xl">
               <div className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">CGI Admin Timesheet Review</div>
@@ -344,330 +313,321 @@ export default function TimesheetApprovals() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="px-6 py-6 sm:px-8">
-          {/* Summary cards */}
-          <div className="grid gap-4 lg:grid-cols-3">
-            <MetricCard label="This Month" value={formatHours(counts.totalHours)} sublabel="Logged hours so far" tone="pink" icon={<Clock3 className="h-4 w-4" />} />
-            <MetricCard label="Approvals" value={counts.approved} sublabel="Ready for payroll" tone="purple" icon={<CircleCheckBig className="h-4 w-4" />} />
-            <MetricCard label="Pending Review" value={counts.pending} sublabel="Entries awaiting action" tone="blue" icon={<CircleAlert className="h-4 w-4" />} />
-          </div>
+      <main className="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-10">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <MetricCard label="This Month" value={formatHours(counts.totalHours)} sublabel="Logged hours so far" tone="pink" icon={<Clock3 className="h-4 w-4" />} />
+          <MetricCard label="Approvals" value={counts.approved} sublabel="Ready for payroll" tone="purple" icon={<CircleCheckBig className="h-4 w-4" />} />
+          <MetricCard label="Pending Review" value={counts.pending} sublabel="Entries awaiting action" tone="blue" icon={<CircleAlert className="h-4 w-4" />} />
+        </div>
 
-          <div className="mt-6 space-y-5">
-            {/* Filters */}
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-900">Filters</h2>
-                  <p className="text-xs text-slate-500">Focus on the entries that need your review.</p>
-                </div>
-                <button type="button" className="text-xs font-medium text-[#c51d4a] hover:text-[#a31a3d]" onClick={clearAll}>
-                  Clear all
-                </button>
+        <div className="mt-6 space-y-5">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Filters</h2>
+                <p className="text-xs text-slate-500">Focus on the entries that need your review.</p>
               </div>
+              <button type="button" className="text-xs font-medium text-[#c51d4a] hover:text-[#a31a3d]" onClick={clearAll}>
+                Clear all
+              </button>
+            </div>
 
-              <div className="grid gap-3 xl:grid-cols-[1fr_1.2fr_1fr_1fr]">
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">User</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
-                    <User2 className="h-4 w-4 shrink-0 text-slate-500" />
-                    <select
-                      value={userFilter}
-                      onChange={(e) => {
-                        setUserFilter(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full bg-transparent text-sm outline-none"
-                    >
-                      {users.map((u) => (
-                        <option key={u}>{u}</option>
-                      ))}
-                    </select>
-                    
-                  </div>
-                </label>
+            <div className="grid gap-3 xl:grid-cols-[1fr_1.2fr_1fr_1fr]">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">User</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
+                  <User2 className="h-4 w-4 shrink-0 text-slate-500" />
+                  <select
+                    value={userFilter}
+                    onChange={(e) => {
+                      setUserFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full bg-transparent text-sm outline-none"
+                  >
+                    {users.map((u) => (
+                      <option key={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Date range</span>
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
-                    <div className="flex items-center gap-3">
-                      <CalendarDays className="h-4 w-4 shrink-0 text-slate-500" />
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.target.value);
-                          setPage(1);
-                        }}
-                        className="w-full bg-transparent text-sm outline-none"
-                        aria-label="Start date"
-                      />
-                    </div>
-                    <span className="text-slate-300">—</span>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Date range</span>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
+                  <div className="flex items-center gap-3">
+                    <CalendarDays className="h-4 w-4 shrink-0 text-slate-500" />
                     <input
                       type="date"
-                      value={endDate}
+                      value={startDate}
                       onChange={(e) => {
-                        setEndDate(e.target.value);
+                        setStartDate(e.target.value);
                         setPage(1);
                       }}
                       className="w-full bg-transparent text-sm outline-none"
-                      aria-label="End date"
+                      aria-label="Start date"
                     />
                   </div>
-                </label>
+                  <span className="text-slate-300">—</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full bg-transparent text-sm outline-none"
+                    aria-label="End date"
+                  />
+                </div>
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Project</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
-                    <Filter className="h-4 w-4 shrink-0 text-slate-500" />
-                    <select
-                      value={projectFilter}
-                      onChange={(e) => {
-                        setProjectFilter(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full bg-transparent text-sm outline-none"
-                    >
-                      {projects.map((p) => (
-                        <option key={p}>{p}</option>
-                      ))}
-                    </select>
-                    
-                  </div>
-                </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Project</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
+                  <Filter className="h-4 w-4 shrink-0 text-slate-500" />
+                  <select
+                    value={projectFilter}
+                    onChange={(e) => {
+                      setProjectFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full bg-transparent text-sm outline-none"
+                  >
+                    {projects.map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
-                    <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => {
-                        setStatusFilter(e.target.value as StatusFilter);
-                        setPage(1);
-                      }}
-                      className="w-full bg-transparent text-sm outline-none"
-                    >
-                      {statuses.map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                    
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Toolbar */}
-            <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => bulkUpdateStatus('Approved')}
-                  disabled={selectedCount === 0}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#0b2a4a] px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-[#102f50] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Check className="h-4 w-4" />
-                  Approve Selected ({selectedCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => bulkUpdateStatus('Rejected')}
-                  disabled={selectedCount === 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#c51d4a]/15 bg-white px-4 py-3 text-sm font-medium text-[#c51d4a] shadow-sm transition hover:bg-[#c51d4a]/5 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <X className="h-4 w-4" />
-                  Reject Selected ({selectedCount})
-                </button>
-                <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-                  <Download className="h-4 w-4" />
-                  Export
-                </button>
-              </div>
-
-              <label className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:max-w-sm">
-                <Search className="h-4 w-4 text-slate-500" />
-                <input
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full bg-transparent text-sm outline-none"
-                  placeholder="Search entries"
-                />
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-[#c51d4a]/15">
+                  <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value as StatusFilter);
+                      setPage(1);
+                    }}
+                    className="w-full bg-transparent text-sm outline-none"
+                  >
+                    {statuses.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
               </label>
             </div>
+          </div>
 
-            {/* Table */}
-            <div className="hidden overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm lg:block">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr className="text-left text-sm font-semibold text-slate-700">
-                      <th className="w-12 px-4 py-4">
-                        <input
-                          type="checkbox"
-                          checked={pageItems.length > 0 && pageItems.every((e) => selected.includes(e.id))}
-                          onChange={selectAllVisible}
-                          className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
-                          aria-label="Select all visible"
-                        />
-                      </th>
-                      <th className="px-4 py-4">Date</th>
-                      <th className="px-4 py-4">User</th>
-                      <th className="px-4 py-4">Project</th>
-                      <th className="px-4 py-4">Task</th>
-                      <th className="px-4 py-4">Hours</th>
-                      <th className="px-4 py-4">Status</th>
-                      <th className="px-4 py-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
-                    {pageItems.map((entry) => {
-                      const selectedRow = selected.includes(entry.id);
-                      const menuOpen = openActionMenu === entry.id;
-
-                      return (
-                        <tr key={entry.id} className={cx('transition hover:bg-slate-50', selectedRow && 'bg-[#0b2a4a]/5')}>
-                          <td className="px-4 py-4 align-middle">
-                            <input
-                              type="checkbox"
-                              checked={selectedRow}
-                              onChange={() => toggle(entry.id)}
-                              className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
-                              aria-label={`Select row ${entry.id}`}
-                            />
-                          </td>
-                          <td className="px-4 py-4 text-sm text-slate-700">{entry.date}</td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar name={entry.user} />
-                              <span className="text-sm font-medium text-slate-900">{entry.user}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-sm text-slate-700">{entry.project}</td>
-                          <td className="px-4 py-4 text-sm text-slate-700">{entry.task}</td>
-                          <td className="px-4 py-4 text-sm text-slate-700">{entry.hours}</td>
-                          <td className="px-4 py-4">
-                            <StatusBadge status={entry.status} />
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <ActionMenu
-                                entry={entry}
-                                open={menuOpen}
-                                onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
-                                onApprove={() => updateStatus(entry.id, 'Approved')}
-                                onReject={() => updateStatus(entry.id, 'Rejected')}
-                                onViewDetails={() => setOpenActionMenu(null)}
-                              />
-                              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-                                <Eye className="h-4 w-4" /> View
-                              </button>
-                              <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => bulkUpdateStatus('Approved')}
+                disabled={selectedCount === 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0b2a4a] px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-[#102f50] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Check className="h-4 w-4" />
+                Approve Selected ({selectedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => bulkUpdateStatus('Rejected')}
+                disabled={selectedCount === 0}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#c51d4a]/15 bg-white px-4 py-3 text-sm font-medium text-[#c51d4a] shadow-sm transition hover:bg-[#c51d4a]/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+                Reject Selected ({selectedCount})
+              </button>
+              <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <Download className="h-4 w-4" />
+                Export
+              </button>
             </div>
 
-            {/* Mobile cards */}
-            <div className="grid gap-4 lg:hidden">
-              {pageItems.map((entry) => (
-                <div key={entry.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <label className="flex items-start gap-3">
+            <label className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:max-w-sm">
+              <Search className="h-4 w-4 text-slate-500" />
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-transparent text-sm outline-none"
+                placeholder="Search entries"
+              />
+            </label>
+          </div>
+
+          <div className="hidden overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm lg:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-sm font-semibold text-slate-700">
+                    <th className="w-12 px-4 py-4">
                       <input
                         type="checkbox"
-                        checked={selected.includes(entry.id)}
-                        onChange={() => toggle(entry.id)}
-                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
+                        checked={pageItems.length > 0 && pageItems.every((e) => selected.includes(e.id))}
+                        onChange={selectAllVisible}
+                        className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
+                        aria-label="Select all visible"
                       />
-                      <div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                          <Avatar name={entry.user} />
-                          {entry.user}
-                        </div>
-                        <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
-                      </div>
-                    </label>
-                    <StatusBadge status={entry.status} />
-                  </div>
+                    </th>
+                    <th className="px-4 py-4">Date</th>
+                    <th className="px-4 py-4">User</th>
+                    <th className="px-4 py-4">Project</th>
+                    <th className="px-4 py-4">Task</th>
+                    <th className="px-4 py-4">Hours</th>
+                    <th className="px-4 py-4">Status</th>
+                    <th className="px-4 py-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {pageItems.map((entry) => {
+                    const selectedRow = selected.includes(entry.id);
+                    const menuOpen = openActionMenu === entry.id;
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <div className="text-slate-500">Project</div>
-                      <div className="font-medium text-slate-900">{entry.project}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Task</div>
-                      <div className="font-medium text-slate-900">{entry.task}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Hours</div>
-                      <div className="font-medium text-slate-900">{entry.hours}</div>
-                    </div>
-                    <div className="flex items-end justify-end gap-2">
-                      <button className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700">
-                        View
-                      </button>
-                    </div>
-                  </div>
+                    return (
+                      <tr key={entry.id} className={cx('transition hover:bg-slate-50', selectedRow && 'bg-[#0b2a4a]/5')}>
+                        <td className="px-4 py-4 align-middle">
+                          <input
+                            type="checkbox"
+                            checked={selectedRow}
+                            onChange={() => toggle(entry.id)}
+                            className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
+                            aria-label={`Select row ${entry.id}`}
+                          />
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{entry.date}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={entry.user} />
+                            <span className="text-sm font-medium text-slate-900">{entry.user}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{entry.project}</td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{entry.task}</td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{entry.hours}</td>
+                        <td className="px-4 py-4">
+                          <StatusBadge status={entry.status} />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <ActionMenu
+                              entry={entry}
+                              open={menuOpen}
+                              onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
+                              onApprove={() => updateStatus(entry.id, 'Approved')}
+                              onReject={() => updateStatus(entry.id, 'Rejected')}
+                              onViewDetails={() => setOpenActionMenu(null)}
+                            />
+                            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+                              <Eye className="h-4 w-4" /> View
+                            </button>
+                            <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                  <div className="mt-4 flex gap-2">
-                    <ActionMenu
-                      entry={entry}
-                      open={openActionMenu === entry.id}
-                      onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
-                      onApprove={() => updateStatus(entry.id, 'Approved')}
-                      onReject={() => updateStatus(entry.id, 'Rejected')}
-                      onViewDetails={() => setOpenActionMenu(null)}
+          <div className="grid gap-4 lg:hidden">
+            {pageItems.map((entry) => (
+              <div key={entry.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(entry.id)}
+                      onChange={() => toggle(entry.id)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
                     />
-                    <button className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                        <Avatar name={entry.user} />
+                        {entry.user}
+                      </div>
+                      <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
+                    </div>
+                  </label>
+                  <StatusBadge status={entry.status} />
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-slate-500">Project</div>
+                    <div className="font-medium text-slate-900">{entry.project}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Task</div>
+                    <div className="font-medium text-slate-900">{entry.task}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Hours</div>
+                    <div className="font-medium text-slate-900">{entry.hours}</div>
+                  </div>
+                  <div className="flex items-end justify-end gap-2">
+                    <button className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700">
+                      View
                     </button>
                   </div>
                 </div>
-              ))}
+
+                <div className="mt-4 flex gap-2">
+                  <ActionMenu
+                    entry={entry}
+                    open={openActionMenu === entry.id}
+                    onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
+                    onApprove={() => updateStatus(entry.id, 'Approved')}
+                    onReject={() => updateStatus(entry.id, 'Rejected')}
+                    onViewDetails={() => setOpenActionMenu(null)}
+                  />
+                  <button className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row">
+            <div className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-700">{pageItems.length}</span> of <span className="font-medium text-slate-700">{filtered.length}</span> filtered entries
             </div>
 
-            {/* Pagination */}
-            <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row">
-              <div className="text-sm text-slate-500">
-                Showing <span className="font-medium text-slate-700">{pageItems.length}</span> of <span className="font-medium text-slate-700">{filtered.length}</span> filtered entries
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="px-3 text-sm text-slate-700">
-                  Page <span className="font-semibold">{safePage}</span> of <span className="font-semibold">{totalPages}</span>
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="px-3 text-sm text-slate-700">
+                Page <span className="font-semibold">{safePage}</span> of <span className="font-semibold">{totalPages}</span>
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -279,501 +279,463 @@ export default function AddTimesheet() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f6f7fb", color: "#0f172a" }}>
-      <div style={{ maxWidth: 1450, margin: "0 auto", padding: 16 }}>
-        <div
-          style={{
-            borderRadius: 28,
-            border: "1px solid #e2e8f0",
-            background: "rgba(255,255,255,0.96)",
-            boxShadow: "0 18px 60px rgba(15,23,42,0.08)",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ display: "flex", minHeight: "calc(100vh - 32px)" }}>
-            <main style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ borderBottom: "1px solid #e2e8f0", background: "#fff", padding: "18px 24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-                  <div>
-                    <h1 style={{ fontSize: 30, lineHeight: 1.2, margin: 0, fontWeight: 700 }}>Create Time Report</h1>
-                    <p style={{ margin: "8px 0 0", color: "#64748b", fontSize: 14 }}>
-                      Enter project hours and non-worked hours in the same layout as your enterprise timesheet.
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 9999,
-                        padding: "8px 12px",
-                        background: "#f8fafc",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 9999,
-                          background: "#0f172a",
-                          color: "#fff",
-                          display: "grid",
-                          placeItems: "center",
-                          fontSize: 12,
-                          fontWeight: 700,
-                        }}
-                      >
-                        L
-                      </div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>Liam Whitehead</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ padding: 24, display: "grid", gap: 24 }}>
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff" }}>
-                  <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-                      Create Time Report
-                    </div>
-                    <div style={{ marginTop: 4, fontSize: 24, fontWeight: 700 }}>Time Report Summary</div>
-                    <div style={{ marginTop: 4, fontSize: 14, color: "#64748b" }}>Carina Jose</div>
-                  </div>
-
-                  <div style={{ padding: 20, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                    {[
-                      ["Empl ID", "548271"],
-                      ["Period End Date", "11/04/2026"],
-                      ["Time Report ID", "NEXT"],
-                      ["Version", "Original"],
-                      ["GL Business Unit", "GB014"],
-                      ["Operating Unit", "1035"],
-                      ["Finance Department", "23405"],
-                      ["Service Type", "120"],
-                      ["Job Code", "201"],
-                      ["Tax Location Code", ""],
-                    ].map(([label, value]) => (
-                      <div key={label} style={{ borderRadius: 16, border: "1px solid #e2e8f0", background: "#f8fafc", padding: 16 }}>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-                        <div style={{ marginTop: 4, fontSize: 14, fontWeight: 700 }}>{value || "—"}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ padding: "0 20px 20px" }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8", marginBottom: 12 }}>Attachments</div>
-                    <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: "#475569" }}>Comment</div>
-                    <textarea
-                      value={form.notes}
-                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                      placeholder="Add a note about this time report..."
-                      style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
-                    />
-                    <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#475569" }}>
-                      <input type="checkbox" />
-                      <span>Show descriptions</span>
-                    </div>
-                  </div>
-                </section>
-
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff" }}>
-                  <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontSize: 18, fontWeight: 700 }}>Project Hours Details</div>
-                        <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                          Enter project time by day, then total is calculated for the row.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ overflowX: "auto" }}>
-                    <div style={{ minWidth: 1280 }}>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                          gap: 0,
-                          padding: "10px 12px",
-                          borderBottom: "1px solid #e2e8f0",
-                          background: "#f8fafc",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "#64748b",
-                        }}
-                      >
-                        {["Project", "Activity", "Source Type", "Category", "Project Subcategory", "Payroll Category", "Billing Action"].map((col) => (
-                          <div key={col} style={{ padding: "0 4px" }}>
-                            {col}
-                          </div>
-                        ))}
-                        {dayLabels.map((d) => (
-                          <div key={d.key} style={{ textAlign: "center", padding: "0 4px" }}>
-                            {d.label}
-                          </div>
-                        ))}
-                        <div style={{ textAlign: "center", padding: "0 4px" }}>Total</div>
-                        <div />
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                          alignItems: "center",
-                          padding: "12px 12px",
-                        }}
-                      >
-                        <div style={{ padding: "0 4px" }}>
-                          <select style={selectStyle()} value={projectHours.project} onChange={(e) => setProjectHours((p) => ({ ...p, project: e.target.value }))}>
-                            <option value="">Select</option>
-                            {projects.map((p) => (
-                              <option key={p} value={p}>
-                                {p}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <select style={selectStyle()} value={projectHours.activity} onChange={(e) => setProjectHours((p) => ({ ...p, activity: e.target.value }))}>
-                            <option value="">Select</option>
-                            {tasks.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <input style={inputStyle()} value={projectHours.sourceType} onChange={(e) => setProjectHours((p) => ({ ...p, sourceType: e.target.value }))} />
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <input style={inputStyle()} value={projectHours.category} onChange={(e) => setProjectHours((p) => ({ ...p, category: e.target.value }))} />
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <input style={inputStyle()} value={projectHours.subcategory} onChange={(e) => setProjectHours((p) => ({ ...p, subcategory: e.target.value }))} />
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <input style={inputStyle()} value={projectHours.payrollCategory} onChange={(e) => setProjectHours((p) => ({ ...p, payrollCategory: e.target.value }))} />
-                        </div>
-                        <div style={{ padding: "0 4px" }}>
-                          <select style={selectStyle()} value={projectHours.billingAction} onChange={(e) => setProjectHours((p) => ({ ...p, billingAction: e.target.value }))}>
-                            {billingActions.map((a) => (
-                              <option key={a} value={a}>
-                                {a}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {dayLabels.map((d) => (
-                          <div key={d.key} style={{ padding: "0 4px" }}>
-                            <input
-                              style={{ ...inputStyle(), textAlign: "center" }}
-                              value={projectHours[d.key]}
-                              onChange={(e) => setProjectHours((p) => ({ ...p, [d.key]: e.target.value }))}
-                              placeholder="0.0"
-                            />
-                          </div>
-                        ))}
-
-                        <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                        <div style={{ textAlign: "right" }}>+</div>
-                      </div>
-
-                      <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px", fontSize: 14, color: "#475569" }}>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div style={{ gridColumn: "span 8", textAlign: "right", paddingRight: 12, fontWeight: 600 }}>
-                            Total Project Related Hours:
-                          </div>
-                          {dayLabels.map((d) => (
-                            <div key={d.key} style={{ textAlign: "center" }}>
-                              {parseHours(projectHours[d.key]).toFixed(2)}
-                            </div>
-                          ))}
-                          <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                          <div />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff" }}>
-                  <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>Internal and Non-Worked hours details</div>
-                    <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                      Use these rows for leave, training, and internal time.
-                    </div>
-                  </div>
-
-                  <div style={{ overflowX: "auto" }}>
-                    <div style={{ minWidth: 1100 }}>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                          padding: "10px 12px",
-                          background: "#f8fafc",
-                          borderBottom: "1px solid #e2e8f0",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "#64748b",
-                        }}
-                      >
-                        <div>Description</div>
-                        {dayLabels.map((d) => (
-                          <div key={d.key} style={{ textAlign: "center" }}>
-                            {d.label}
-                          </div>
-                        ))}
-                        <div style={{ textAlign: "center" }}>Total</div>
-                      </div>
-
-                      {Object.entries(nonWorked).map(([label, values]) => {
-                        const total = sumDays(values);
-                        return (
-                          <div
-                            key={label}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                              alignItems: "center",
-                              padding: "10px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              fontSize: 14,
-                            }}
-                          >
-                            <div>{label}</div>
-                            {dayLabels.map((d) => (
-                              <div key={d.key} style={{ padding: "0 4px" }}>
-                                <input
-                                  style={{ ...inputStyle(), textAlign: "center" }}
-                                  value={values[d.key]}
-                                  onChange={(e) => setNonWorked((prev) => ({
-                                    ...prev,
-                                    [label]: { ...prev[label], [d.key]: e.target.value },
-                                  }))}
-                                  placeholder="0.0"
-                                />
-                              </div>
-                            ))}
-                            <div style={{ textAlign: "center", fontWeight: 700 }}>{total.toFixed(2)}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
-                  <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>User</div>
-                      <select style={selectStyle()} value={form.user} onChange={(e) => setForm((f) => ({ ...f, user: e.target.value }))}>
-                        <option value="">Select user</option>
-                        {users.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Date</div>
-                      <input
-                        style={inputStyle()}
-                        value={form.date}
-                        onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                        type="date"
-                      />
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Project</div>
-                      <select style={selectStyle()} value={form.project} onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}>
-                        <option value="">Select project</option>
-                        {projects.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Time Code</div>
-                      <select style={selectStyle()} value={form.timeCode} onChange={(e) => setForm((f) => ({ ...f, timeCode: e.target.value }))}>
-                        {timeCodes.map((t) => (
-                          <option key={t.code} value={t.code}>
-                            {t.code} - {t.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Task</div>
-                      <select style={selectStyle()} value={form.task} onChange={(e) => setForm((f) => ({ ...f, task: e.target.value }))}>
-                        {tasks.map((task) => (
-                          <option key={task} value={task}>
-                            {task}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Hours</div>
-                      <input
-                        style={inputStyle()}
-                        value={form.hours}
-                        onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))}
-                        placeholder="8.0"
-                        type="number"
-                        step="0.5"
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Notes</div>
-                    <textarea
-                      style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
-                      value={form.notes}
-                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                      placeholder="Add details for the timesheet entry..."
-                    />
-                  </div>
-
-                  <div style={{ marginTop: 20, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    <button style={buttonStyle("primary")} onClick={submitAdd}>
-                      Save entry
-                    </button>
-                    <button style={buttonStyle("outline")} onClick={clearAll}>
-                      Clear
-                    </button>
-                  </div>
-                </section>
-
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
-                  <div style={{ marginBottom: 12, fontWeight: 700, fontSize: 16 }}>Quick stats</div>
-                  <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-                    <StatCard label="Total hours" value={`${stats.hours.toFixed(1)}h`} background="#eff6ff" />
-                    <StatCard label="Pending" value={`${stats.pending}`} background="#fffbeb" />
-                    <StatCard label="Approved" value={`${stats.approved}`} background="#ecfdf5" />
-                    <StatCard label="Rejected" value={`${stats.rejected}`} background="#fef2f2" />
-                  </div>
-                </section>
-
-                <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 700 }}>Recent entries</div>
-                      <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>Approve or reject directly from the list.</div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 12, padding: "8px 12px" }}>
-                      <span style={{ color: "#94a3b8" }}>Search</span>
-                      <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search entries..."
-                        style={{ border: 0, background: "transparent", outline: "none", fontSize: 14 }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ overflowX: "auto" }}>
-                    <div style={{ minWidth: 980 }}>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "120px 160px 1.1fr 1fr 90px 120px 180px",
-                          padding: "12px 12px",
-                          background: "#f8fafc",
-                          border: "1px solid #e2e8f0",
-                          borderBottom: 0,
-                          borderTopLeftRadius: 16,
-                          borderTopRightRadius: 16,
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: "#64748b",
-                        }}
-                      >
-                        <div>Date</div>
-                        <div>User</div>
-                        <div>Project</div>
-                        <div>Task</div>
-                        <div>Hours</div>
-                        <div>Status</div>
-                        <div>Actions</div>
-                      </div>
-
-                      <div style={{ border: "1px solid #e2e8f0", borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: "hidden" }}>
-                        {filteredRows.map((row) => (
-                          <div
-                            key={row.id}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "120px 160px 1.1fr 1fr 90px 120px 180px",
-                              alignItems: "center",
-                              padding: "14px 12px",
-                              borderTop: "1px solid #e2e8f0",
-                              fontSize: 14,
-                              background: "#fff",
-                            }}
-                          >
-                            <div style={{ color: "#334155" }}>{row.date}</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#334155" }}>
-                              <div style={{ width: 28, height: 28, borderRadius: 9999, background: "#e2e8f0" }} />
-                              <span>{row.user}</span>
-                            </div>
-                            <div style={{ color: "#334155" }}>{row.project}</div>
-                            <div style={{ color: "#334155" }}>{row.task}</div>
-                            <div style={{ color: "#334155" }}>{row.hours}</div>
-                            <div>
-                              <StatusBadge status={row.status} />
-                            </div>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                              <button style={buttonStyle("outline")} onClick={() => approve(row.id)}>
-                                Approve
-                              </button>
-                              <button style={buttonStyle("danger")} onClick={() => reject(row.id)}>
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button style={buttonStyle("primary")} onClick={submitAdd}>
-                    Submit
-                  </button>
-                  <button style={buttonStyle("outline")} onClick={clearAll}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </main>
+    <div style={{ minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" }}>
+      <div
+        style={{
+          background: "linear-gradient(90deg, #d71920 0%, #c81d5a 50%, #6f2dbd 100%)",
+          color: "white",
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 24px" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.8 }}>
+            CGI Timesheet Portal
           </div>
+          <h1 style={{ fontSize: 42, lineHeight: 1.1, margin: "12px 0 0", fontWeight: 700 }}>
+            Create Time Report
+          </h1>
+          <p style={{ margin: "12px 0 0", maxWidth: 760, fontSize: 16, opacity: 0.92 }}>
+            Enter project hours and non-worked hours in the same layout as your enterprise timesheet.
+          </p>
         </div>
       </div>
+
+      <main style={{ width: "100%", padding: "32px 24px 40px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gap: 24 }}>
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
+            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+                Create Time Report
+              </div>
+              <div style={{ marginTop: 4, fontSize: 24, fontWeight: 700 }}>Time Report Summary</div>
+              <div style={{ marginTop: 4, fontSize: 14, color: "#64748b" }}>Carina Jose</div>
+            </div>
+
+            <div style={{ padding: 20, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              {[
+                ["Empl ID", "548271"],
+                ["Period End Date", "11/04/2026"],
+                ["Time Report ID", "NEXT"],
+                ["Version", "Original"],
+                ["GL Business Unit", "GB014"],
+                ["Operating Unit", "1035"],
+                ["Finance Department", "23405"],
+                ["Service Type", "120"],
+                ["Job Code", "201"],
+                ["Tax Location Code", ""],
+              ].map(([label, value]) => (
+                <div key={label} style={{ borderRadius: 16, border: "1px solid #e2e8f0", background: "#f8fafc", padding: 16 }}>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
+                  <div style={{ marginTop: 4, fontSize: 14, fontWeight: 700 }}>{value || "—"}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding: "0 20px 20px" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8", marginBottom: 12 }}>Attachments</div>
+              <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: "#475569" }}>Comment</div>
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Add a note about this time report..."
+                style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
+              />
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#475569" }}>
+                <input type="checkbox" />
+                <span>Show descriptions</span>
+              </div>
+            </div>
+          </section>
+
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
+            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>Project Hours Details</div>
+              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
+                Enter project time by day, then total is calculated for the row.
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <div style={{ minWidth: 1280 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
+                    gap: 0,
+                    padding: "10px 12px",
+                    borderBottom: "1px solid #e2e8f0",
+                    background: "#f8fafc",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  {["Project", "Activity", "Source Type", "Category", "Project Subcategory", "Payroll Category", "Billing Action"].map((col) => (
+                    <div key={col} style={{ padding: "0 4px" }}>
+                      {col}
+                    </div>
+                  ))}
+                  {dayLabels.map((d) => (
+                    <div key={d.key} style={{ textAlign: "center", padding: "0 4px" }}>
+                      {d.label}
+                    </div>
+                  ))}
+                  <div style={{ textAlign: "center", padding: "0 4px" }}>Total</div>
+                  <div />
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
+                    alignItems: "center",
+                    padding: "12px 12px",
+                  }}
+                >
+                  <div style={{ padding: "0 4px" }}>
+                    <select style={selectStyle()} value={projectHours.project} onChange={(e) => setProjectHours((p) => ({ ...p, project: e.target.value }))}>
+                      <option value="">Select</option>
+                      {projects.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <select style={selectStyle()} value={projectHours.activity} onChange={(e) => setProjectHours((p) => ({ ...p, activity: e.target.value }))}>
+                      <option value="">Select</option>
+                      {tasks.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <input style={inputStyle()} value={projectHours.sourceType} onChange={(e) => setProjectHours((p) => ({ ...p, sourceType: e.target.value }))} />
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <input style={inputStyle()} value={projectHours.category} onChange={(e) => setProjectHours((p) => ({ ...p, category: e.target.value }))} />
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <input style={inputStyle()} value={projectHours.subcategory} onChange={(e) => setProjectHours((p) => ({ ...p, subcategory: e.target.value }))} />
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <input style={inputStyle()} value={projectHours.payrollCategory} onChange={(e) => setProjectHours((p) => ({ ...p, payrollCategory: e.target.value }))} />
+                  </div>
+                  <div style={{ padding: "0 4px" }}>
+                    <select style={selectStyle()} value={projectHours.billingAction} onChange={(e) => setProjectHours((p) => ({ ...p, billingAction: e.target.value }))}>
+                      {billingActions.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {dayLabels.map((d) => (
+                    <div key={d.key} style={{ padding: "0 4px" }}>
+                      <input
+                        style={{ ...inputStyle(), textAlign: "center" }}
+                        value={projectHours[d.key]}
+                        onChange={(e) => setProjectHours((p) => ({ ...p, [d.key]: e.target.value }))}
+                        placeholder="0.0"
+                      />
+                    </div>
+                  ))}
+
+                  <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
+                  <div style={{ textAlign: "right" }}>+</div>
+                </div>
+
+                <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px", fontSize: 14, color: "#475569" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ gridColumn: "span 8", textAlign: "right", paddingRight: 12, fontWeight: 600 }}>
+                      Total Project Related Hours:
+                    </div>
+                    {dayLabels.map((d) => (
+                      <div key={d.key} style={{ textAlign: "center" }}>
+                        {parseHours(projectHours[d.key]).toFixed(2)}
+                      </div>
+                    ))}
+                    <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
+                    <div />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
+            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>Internal and Non-Worked hours details</div>
+              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
+                Use these rows for leave, training, and internal time.
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <div style={{ minWidth: 1100 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "280px repeat(7, 78px) 80px",
+                    padding: "10px 12px",
+                    background: "#f8fafc",
+                    borderBottom: "1px solid #e2e8f0",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  <div>Description</div>
+                  {dayLabels.map((d) => (
+                    <div key={d.key} style={{ textAlign: "center" }}>
+                      {d.label}
+                    </div>
+                  ))}
+                  <div style={{ textAlign: "center" }}>Total</div>
+                </div>
+
+                {Object.entries(nonWorked).map(([label, values]) => {
+                  const total = sumDays(values);
+                  return (
+                    <div
+                      key={label}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "280px repeat(7, 78px) 80px",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderBottom: "1px solid #e2e8f0",
+                        fontSize: 14,
+                      }}
+                    >
+                      <div>{label}</div>
+                      {dayLabels.map((d) => (
+                        <div key={d.key} style={{ padding: "0 4px" }}>
+                          <input
+                            style={{ ...inputStyle(), textAlign: "center" }}
+                            value={values[d.key]}
+                            onChange={(e) =>
+                              setNonWorked((prev) => ({
+                                ...prev,
+                                [label]: { ...prev[label], [d.key]: e.target.value },
+                              }))
+                            }
+                            placeholder="0.0"
+                          />
+                        </div>
+                      ))}
+                      <div style={{ textAlign: "center", fontWeight: 700 }}>{total.toFixed(2)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
+            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>User</div>
+                <select style={selectStyle()} value={form.user} onChange={(e) => setForm((f) => ({ ...f, user: e.target.value }))}>
+                  <option value="">Select user</option>
+                  {users.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Date</div>
+                <input
+                  style={inputStyle()}
+                  value={form.date}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                  type="date"
+                />
+              </div>
+
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Project</div>
+                <select style={selectStyle()} value={form.project} onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}>
+                  <option value="">Select project</option>
+                  {projects.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Time Code</div>
+                <select style={selectStyle()} value={form.timeCode} onChange={(e) => setForm((f) => ({ ...f, timeCode: e.target.value }))}>
+                  {timeCodes.map((t) => (
+                    <option key={t.code} value={t.code}>
+                      {t.code} - {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Task</div>
+                <select style={selectStyle()} value={form.task} onChange={(e) => setForm((f) => ({ ...f, task: e.target.value }))}>
+                  {tasks.map((task) => (
+                    <option key={task} value={task}>
+                      {task}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Hours</div>
+                <input
+                  style={inputStyle()}
+                  value={form.hours}
+                  onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))}
+                  placeholder="8.0"
+                  type="number"
+                  step="0.5"
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Notes</div>
+              <textarea
+                style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Add details for the timesheet entry..."
+              />
+            </div>
+
+            <div style={{ marginTop: 20, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button style={buttonStyle("primary")} onClick={submitAdd}>
+                Save entry
+              </button>
+              <button style={buttonStyle("outline")} onClick={clearAll}>
+                Clear
+              </button>
+            </div>
+          </section>
+
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
+            <div style={{ marginBottom: 12, fontWeight: 700, fontSize: 16 }}>Quick stats</div>
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+              <StatCard label="Total hours" value={`${stats.hours.toFixed(1)}h`} background="#eff6ff" />
+              <StatCard label="Pending" value={`${stats.pending}`} background="#fffbeb" />
+              <StatCard label="Approved" value={`${stats.approved}`} background="#ecfdf5" />
+              <StatCard label="Rejected" value={`${stats.rejected}`} background="#fef2f2" />
+            </div>
+          </section>
+
+          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>Recent entries</div>
+                <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>Approve or reject directly from the list.</div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 12, padding: "8px 12px" }}>
+                <span style={{ color: "#94a3b8" }}>Search</span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search entries..."
+                  style={{ border: 0, background: "transparent", outline: "none", fontSize: 14 }}
+                />
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <div style={{ minWidth: 980 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "120px 160px 1.1fr 1fr 90px 120px 180px",
+                    padding: "12px 12px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderBottom: 0,
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  <div>Date</div>
+                  <div>User</div>
+                  <div>Project</div>
+                  <div>Task</div>
+                  <div>Hours</div>
+                  <div>Status</div>
+                  <div>Actions</div>
+                </div>
+
+                <div style={{ border: "1px solid #e2e8f0", borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: "hidden" }}>
+                  {filteredRows.map((row) => (
+                    <div
+                      key={row.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "120px 160px 1.1fr 1fr 90px 120px 180px",
+                        alignItems: "center",
+                        padding: "14px 12px",
+                        borderTop: "1px solid #e2e8f0",
+                        fontSize: 14,
+                        background: "#fff",
+                      }}
+                    >
+                      <div style={{ color: "#334155" }}>{row.date}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#334155" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 9999, background: "#e2e8f0" }} />
+                        <span>{row.user}</span>
+                      </div>
+                      <div style={{ color: "#334155" }}>{row.project}</div>
+                      <div style={{ color: "#334155" }}>{row.task}</div>
+                      <div style={{ color: "#334155" }}>{row.hours}</div>
+                      <div>
+                        <StatusBadge status={row.status} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button style={buttonStyle("outline")} onClick={() => approve(row.id)}>
+                          Approve
+                        </button>
+                        <button style={buttonStyle("danger")} onClick={() => reject(row.id)}>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button style={buttonStyle("primary")} onClick={submitAdd}>
+              Submit
+            </button>
+            <button style={buttonStyle("outline")} onClick={clearAll}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
