@@ -1,4 +1,11 @@
+import * as React from "react";
 import { useMemo, useState } from "react";
+import {
+  listTimesheets,
+  type EntryStatus,
+  type TimesheetEntry,
+} from "../lib/api";
+import { useAuthSession } from "../lib/useAuthSession";
 
 type Status = "Pending" | "Approved" | "Rejected";
 
@@ -12,8 +19,87 @@ type Entry = {
   status: Status;
 };
 
+function titleCaseStatus(status: EntryStatus): Status {
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function mapEntryToUi(entry: TimesheetEntry): Entry {
+  return {
+    id: entry.id,
+    employee: entry.user?.name ?? `User #${entry.user_id}`,
+    date: entry.entry_date,
+    hours: entry.hours,
+    project: entry.time_code?.code ?? `Time Code #${entry.time_code_id}`,
+    description:
+      entry.description?.trim() ||
+      entry.time_code?.description ||
+      "Timesheet entry",
+    status: titleCaseStatus(entry.status),
+  };
+}
+
+function LoginView({
+  onLogin,
+  error,
+  busy,
+}: {
+  onLogin: (email: string, password: string) => Promise<void>;
+  error: string;
+  busy: boolean;
+}) {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <form
+        className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          await onLogin(email, password);
+        }}
+      >
+        <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Authenticate to view and manage timesheets.
+        </p>
+
+        <label className="mt-5 block text-sm text-slate-700">Email</label>
+        <input
+          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <label className="mt-4 block text-sm text-slate-700">Password</label>
+        <input
+          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+        <button
+          className="mt-5 w-full rounded-xl bg-slate-900 px-3 py-2 font-semibold text-white"
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: Status }) {
-  const classes = {
+  const classes: Record<Status, string> = {
     Pending: "border-amber-200 bg-amber-50 text-amber-700",
     Approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
     Rejected: "border-red-200 bg-red-50 text-red-700",
@@ -55,83 +141,53 @@ function formatDate(date: Date) {
 }
 
 export default function History() {
+  const {
+    loading: authLoading,
+    isAuthenticated,
+    signIn,
+    token,
+    user,
+    error: authError,
+  } = useAuthSession();
+
   const [selectedWeekDate, setSelectedWeekDate] = useState("");
   const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
+  const [entries, setEntries] = React.useState<Entry[]>([]);
+  const [loadingEntries, setLoadingEntries] = React.useState(false);
+  const [entriesError, setEntriesError] = React.useState("");
 
-  const entries: Entry[] = [
-    {
-      id: 1,
-      employee: "Alex Johnson",
-      date: "2026-04-07",
-      hours: 8,
-      project: "Client Portal",
-      description: "Built dashboard widgets and fixed validation issues.",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      employee: "Alex Johnson",
-      date: "2026-04-03",
-      hours: 7.5,
-      project: "Client Portal",
-      description: "Worked on responsive layout improvements.",
-      status: "Approved",
-    },
-    {
-      id: 3,
-      employee: "Alex Johnson",
-      date: "2026-03-27",
-      hours: 6,
-      project: "Internal Tools",
-      description: "Updated reporting filters and exports.",
-      status: "Approved",
-    },
-    {
-      id: 4,
-      employee: "Alex Johnson",
-      date: "2026-03-20",
-      hours: 8.5,
-      project: "Payroll System",
-      description: "Fixed timesheet approval workflow bugs.",
-      status: "Rejected",
-    },
-    {
-      id: 5,
-      employee: "Alex Johnson",
-      date: "2026-03-14",
-      hours: 8,
-      project: "Client Portal",
-      description: "Completed testing and bug fixes.",
-      status: "Approved",
-    },
-    {
-      id: 6,
-      employee: "Alex Johnson",
-      date: "2026-03-07",
-      hours: 7,
-      project: "Internal Tools",
-      description: "Refined dashboard widgets for reporting.",
-      status: "Approved",
-    },
-    {
-      id: 7,
-      employee: "Alex Johnson",
-      date: "2026-02-28",
-      hours: 8,
-      project: "Payroll System",
-      description: "Reviewed approval flow and prepared release notes.",
-      status: "Pending",
-    },
-    {
-      id: 8,
-      employee: "Alex Johnson",
-      date: "2026-02-21",
-      hours: 6.5,
-      project: "Client Portal",
-      description: "Worked on accessibility improvements.",
-      status: "Approved",
-    },
-  ];
+  React.useEffect(() => {
+    if (!token) {
+      setEntries([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingEntries(true);
+    setEntriesError("");
+
+    listTimesheets(token)
+      .then((data) => {
+        if (cancelled) return;
+        setEntries(
+          data.map(mapEntryToUi).sort((a, b) => b.date.localeCompare(a.date))
+        );
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setEntriesError(
+          error instanceof Error ? error.message : "Unable to load timesheets"
+        );
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingEntries(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const weekStart = selectedWeekDate ? getStartOfWeek(selectedWeekDate) : null;
   const weekEnd = selectedWeekDate ? getEndOfWeek(selectedWeekDate) : null;
@@ -155,6 +211,18 @@ export default function History() {
     });
   }, [entries, selectedWeekDate, historyStatusFilter, weekStart, weekEnd]);
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600">
+        Loading session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <LoginView onLogin={signIn} error={authError} busy={authLoading} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div className="bg-gradient-to-r from-[#d71920] via-[#c81d5a] to-[#6f2dbd] px-6 py-10 text-white md:px-10">
@@ -168,6 +236,12 @@ export default function History() {
           <p className="mt-3 max-w-2xl text-sm text-white/90 md:text-base">
             Browse submitted timesheets and filter by week and status.
           </p>
+
+          {selectedWeekDate ? (
+            <p className="mt-4 text-sm text-white/80">
+              Showing week of {formatDate(weekStart!)} to {formatDate(weekEnd!)}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -213,6 +287,12 @@ export default function History() {
           </button>
         </div>
 
+        {entriesError ? (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {entriesError}
+          </div>
+        ) : null}
+
         <div className="overflow-hidden rounded-[28px] bg-white shadow-xl ring-1 ring-slate-200">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
             <div>
@@ -229,37 +309,42 @@ export default function History() {
           </div>
 
           <div className="max-h-[620px] space-y-4 overflow-y-auto p-6">
-            {filteredHistory.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-slate-300 hover:bg-white"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-base font-semibold text-slate-900">
-                        {entry.project}
-                      </h3>
-                      <StatusBadge status={entry.status} />
+            {loadingEntries ? (
+              <div className="text-sm text-slate-500">Loading entries...</div>
+            ) : null}
+
+            {!loadingEntries &&
+              filteredHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-slate-300 hover:bg-white"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-base font-semibold text-slate-900">
+                          {entry.project}
+                        </h3>
+                        <StatusBadge status={entry.status} />
+                      </div>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {entry.description}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Employee: {entry.employee}
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {entry.description}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Employee: {entry.employee}
-                    </p>
-                  </div>
-                  <div className="text-sm text-slate-500 sm:text-right">
-                    <div>{entry.date}</div>
-                    <div className="mt-1 font-semibold text-slate-900">
-                      {entry.hours} hrs
+                    <div className="text-sm text-slate-500 sm:text-right">
+                      <div>{entry.date}</div>
+                      <div className="mt-1 font-semibold text-slate-900">
+                        {entry.hours} hrs
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {filteredHistory.length === 0 ? (
+            {!loadingEntries && filteredHistory.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-12 text-center text-slate-500">
                 No timesheets match those filters.
               </div>

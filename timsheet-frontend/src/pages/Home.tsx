@@ -1,4 +1,11 @@
+import * as React from "react";
 import { Link } from "react-router-dom";
+import {
+  listTimesheets,
+  type EntryStatus,
+  type TimesheetEntry,
+} from "../lib/api";
+import { useAuthSession } from "../lib/useAuthSession";
 
 type Status = "Pending" | "Approved" | "Rejected";
 
@@ -11,6 +18,85 @@ type Entry = {
   description: string;
   status: Status;
 };
+
+function titleCaseStatus(status: EntryStatus): Status {
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function mapEntryToUi(entry: TimesheetEntry): Entry {
+  return {
+    id: entry.id,
+    employee: entry.user?.name ?? `User #${entry.user_id}`,
+    date: entry.entry_date,
+    hours: entry.hours,
+    project: entry.time_code?.code ?? `Time Code #${entry.time_code_id}`,
+    description:
+      entry.description?.trim() ||
+      entry.time_code?.description ||
+      "Timesheet entry",
+    status: titleCaseStatus(entry.status),
+  };
+}
+
+function LoginView({
+  onLogin,
+  error,
+  busy,
+}: {
+  onLogin: (email: string, password: string) => Promise<void>;
+  error: string;
+  busy: boolean;
+}) {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <form
+        className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          await onLogin(email, password);
+        }}
+      >
+        <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Authenticate to view and manage timesheets.
+        </p>
+
+        <label className="mt-5 block text-sm text-slate-700">Email</label>
+        <input
+          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <label className="mt-4 block text-sm text-slate-700">Password</label>
+        <input
+          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+        <button
+          className="mt-5 w-full rounded-xl bg-slate-900 px-3 py-2 font-semibold text-white"
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
@@ -45,7 +131,7 @@ function SummaryCard({
 }
 
 function StatusBadge({ status }: { status: Status }) {
-  const classes = {
+  const classes: Record<Status, string> = {
     Pending: "border-amber-200 bg-amber-50 text-amber-700",
     Approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
     Rejected: "border-red-200 bg-red-50 text-red-700",
@@ -61,67 +147,113 @@ function StatusBadge({ status }: { status: Status }) {
 }
 
 export default function Home() {
-  const entries: Entry[] = [
-    {
-      id: 1,
-      employee: "Alex Johnson",
-      date: "2026-04-07",
-      hours: 8,
-      project: "Client Portal",
-      description: "Built dashboard widgets and fixed validation issues.",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      employee: "Alex Johnson",
-      date: "2026-04-03",
-      hours: 7.5,
-      project: "Client Portal",
-      description: "Worked on responsive layout improvements.",
-      status: "Approved",
-    },
-    {
-      id: 3,
-      employee: "Alex Johnson",
-      date: "2026-03-27",
-      hours: 6,
-      project: "Internal Tools",
-      description: "Updated reporting filters and exports.",
-      status: "Approved",
-    },
-    {
-      id: 4,
-      employee: "Alex Johnson",
-      date: "2026-03-20",
-      hours: 8.5,
-      project: "Payroll System",
-      description: "Fixed timesheet approval workflow bugs.",
-      status: "Rejected",
-    },
-    {
-      id: 5,
-      employee: "Alex Johnson",
-      date: "2026-03-14",
-      hours: 8,
-      project: "Client Portal",
-      description: "Completed testing and bug fixes.",
-      status: "Approved",
-    },
-  ];
+  const {
+    loading: authLoading,
+    isAuthenticated,
+    signIn,
+    token,
+    user,
+    error: authError,
+  } = useAuthSession();
 
-  const rejectedCount = entries.filter((entry) => entry.status === "Rejected").length;
-  const approvedCount = entries.filter((entry) => entry.status === "Approved").length;
-  const pendingCount = entries.filter((entry) => entry.status === "Pending").length;
+  const [entries, setEntries] = React.useState<Entry[]>([]);
+  const [loadingEntries, setLoadingEntries] = React.useState(false);
+  const [entriesError, setEntriesError] = React.useState("");
 
-  const weeklyData = [
-    { label: "Week 1", hours: 32 },
-    { label: "Week 2", hours: 36 },
-    { label: "Week 3", hours: 29 },
-    { label: "Week 4", hours: 38 },
-    { label: "Week 5", hours: 34 },
-  ];
+  React.useEffect(() => {
+    if (!token) {
+      setEntries([]);
+      return;
+    }
 
-  const maxHours = Math.max(...weeklyData.map((item) => item.hours));
+    let cancelled = false;
+    setLoadingEntries(true);
+    setEntriesError("");
+
+    listTimesheets(token)
+      .then((data) => {
+        if (cancelled) return;
+        setEntries(
+          data.map(mapEntryToUi).sort((a, b) => b.date.localeCompare(a.date))
+        );
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setEntriesError(
+          error instanceof Error ? error.message : "Unable to load timesheets"
+        );
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingEntries(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
+  const approvedCount = entries.filter(
+    (entry) => entry.status === "Approved"
+  ).length;
+  const pendingCount = entries.filter(
+    (entry) => entry.status === "Pending"
+  ).length;
+  const rejectedCount = entries.filter(
+    (entry) => entry.status === "Rejected"
+  ).length;
+
+  const weeklyData = React.useMemo(() => {
+    if (entries.length === 0) {
+      return [
+        { label: "Week 1", hours: 0 },
+        { label: "Week 2", hours: 0 },
+        { label: "Week 3", hours: 0 },
+        { label: "Week 4", hours: 0 },
+        { label: "Week 5", hours: 0 },
+      ];
+    }
+
+    const now = new Date();
+    const result = Array.from({ length: 5 }, (_, index) => {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(now.getDate() - (4 - index) * 7);
+
+      const end = new Date(start);
+      end.setDate(start.getDate() + 7);
+
+      const hours = entries.reduce((sum, entry) => {
+        const entryDate = new Date(entry.date);
+        if (entryDate >= start && entryDate < end) {
+          return sum + entry.hours;
+        }
+        return sum;
+      }, 0);
+
+      return {
+        label: `Week ${index + 1}`,
+        hours,
+      };
+    });
+
+    return result;
+  }, [entries]);
+
+  const maxHours = Math.max(...weeklyData.map((item) => item.hours), 1);
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600">
+        Loading session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <LoginView onLogin={signIn} error={authError} busy={authLoading} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -137,11 +269,12 @@ export default function Home() {
                 CGI Timesheet Portal
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-6xl">
-                Welcome back, Alex
+                Welcome back, {user.name.split(" ")[0]}
               </h1>
               <p className="mt-4 max-w-2xl text-base text-white/90 md:text-lg">
-                Review your recent timesheets, track weekly hours, and move to the
-                separate submission flow when you are ready to add a new entry.
+                Review your recent timesheets, track weekly hours, and move to
+                the separate submission flow when you are ready to add a new
+                entry.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -158,11 +291,32 @@ export default function Home() {
                 >
                   View History
                 </Link>
+
+                {user.role === "manager" || user.role === "admin" ? (
+                  <Link
+                    to="/approvals"
+                    className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
+                  >
+                    Open Approvals
+                  </Link>
+                ) : null}
               </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+              <HeroStat label="This Month" value={totalHours.toFixed(1)} />
+              <HeroStat label="Approved" value={String(approvedCount)} />
+              <HeroStat label="Pending" value={String(pendingCount)} />
             </div>
           </div>
         </div>
       </div>
+
+      {entriesError ? (
+        <div className="mx-auto mt-6 max-w-7xl rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {entriesError}
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-10">
         <div className="mb-8 grid gap-4 md:grid-cols-3">
@@ -178,7 +332,12 @@ export default function Home() {
             subtext="Entries awaiting action"
             accent="from-[#6f2dbd] to-[#8b5cf6]"
           />
-          <SummaryCard label="Rejections" value={String(rejectedCount)} subtext="Entries Rejected" accent="from-[#c81d5a] to-[#d946ef]" />
+          <SummaryCard
+            label="Rejections"
+            value={String(rejectedCount)}
+            subtext="Entries rejected"
+            accent="from-[#d71920] to-[#ef4444]"
+          />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
@@ -201,6 +360,16 @@ export default function Home() {
             </div>
 
             <div className="space-y-4 p-6">
+              {loadingEntries ? (
+                <div className="text-sm text-slate-500">Loading entries...</div>
+              ) : null}
+
+              {!loadingEntries && entries.length === 0 ? (
+                <div className="text-sm text-slate-500">
+                  No timesheet entries found.
+                </div>
+              ) : null}
+
               {entries.slice(0, 4).map((entry) => (
                 <div
                   key={entry.id}
@@ -216,6 +385,9 @@ export default function Home() {
                       </div>
                       <p className="mt-2 text-sm text-slate-600">
                         {entry.description}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Employee: {entry.employee}
                       </p>
                     </div>
                     <div className="text-sm text-slate-500 sm:text-right">
@@ -300,6 +472,15 @@ export default function Home() {
                 >
                   Browse Full History
                 </Link>
+
+                {user.role === "manager" || user.role === "admin" ? (
+                  <Link
+                    to="/approvals"
+                    className="mt-3 block w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+                  >
+                    Open Approvals
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
