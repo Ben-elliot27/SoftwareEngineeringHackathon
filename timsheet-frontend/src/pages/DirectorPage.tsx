@@ -137,10 +137,16 @@ function ActionMenu({
   entry,
   open,
   onToggle,
+  onApprove,
+  onReject,
+  onViewDetails,
 }: {
   entry: TimesheetEntry;
   open: boolean;
   onToggle: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onViewDetails: () => void;
 }) {
   return (
     <div className="relative">
@@ -160,11 +166,17 @@ function ActionMenu({
         <ChevronDown className="h-4 w-4" />
       </button>
 
-      {open && entry.status === 'Pending' ? (
-        <div className="absolute left-0 top-full z-30 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
-          <button className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100">Approve</button>
-          <button className="w-full rounded-lg px-3 py-2 text-left text-sm text-[#c51d4a] hover:bg-[#c51d4a]/5">Reject</button>
-          <button className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100">View Details</button>
+      {open ? (
+        <div className="absolute left-0 top-full z-30 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
+          <button onClick={onApprove} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100">
+            Approve
+          </button>
+          <button onClick={onReject} className="w-full rounded-lg px-3 py-2 text-left text-sm text-[#c51d4a] hover:bg-[#c51d4a]/5">
+            Reject
+          </button>
+          <button onClick={onViewDetails} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100">
+            View Details
+          </button>
         </div>
       ) : null}
     </div>
@@ -172,6 +184,7 @@ function ActionMenu({
 }
 
 export default function TimesheetApprovals() {
+  const [entries, setEntries] = useState<TimesheetEntry[]>(entriesSeed);
   const [selected, setSelected] = useState<number[]>([1, 3, 6]);
   const [userFilter, setUserFilter] = useState('All Users');
   const [projectFilter, setProjectFilter] = useState('All Projects');
@@ -181,9 +194,14 @@ export default function TimesheetApprovals() {
   const [page, setPage] = useState(1);
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
 
+  const updateStatus = (id: number, status: Status) => {
+    setEntries((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    setOpenActionMenu(null);
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return entriesSeed.filter((entry) => {
+    return entries.filter((entry) => {
       const userOk = userFilter === 'All Users' || entry.user === userFilter;
       const projectOk = projectFilter === 'All Projects' || entry.project === projectFilter;
       const statusOk = statusFilter === 'All Status' || entry.status === statusFilter;
@@ -192,7 +210,7 @@ export default function TimesheetApprovals() {
         [entry.date, entry.user, entry.project, entry.task, String(entry.hours), entry.status].join(' ').toLowerCase().includes(q);
       return userOk && projectOk && statusOk && searchOk;
     });
-  }, [userFilter, projectFilter, statusFilter, search]);
+  }, [entries, userFilter, projectFilter, statusFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -200,11 +218,11 @@ export default function TimesheetApprovals() {
 
   const counts = useMemo(
     () => ({
-      pending: entriesSeed.filter((e) => e.status === 'Pending').length,
-      approved: entriesSeed.filter((e) => e.status === 'Approved').length,
-      rejected: entriesSeed.filter((e) => e.status === 'Rejected').length,
+      pending: entries.filter((e) => e.status === 'Pending').length,
+      approved: entries.filter((e) => e.status === 'Approved').length,
+      rejected: entries.filter((e) => e.status === 'Rejected').length,
     }),
-    [],
+    [entries],
   );
 
   const selectedCount = selected.filter((id) => filtered.some((e) => e.id === id)).length;
@@ -517,6 +535,9 @@ export default function TimesheetApprovals() {
                                 entry={entry}
                                 open={menuOpen}
                                 onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
+                                onApprove={() => updateStatus(entry.id, 'Approved')}
+                                onReject={() => updateStatus(entry.id, 'Rejected')}
+                                onViewDetails={() => setOpenActionMenu(null)}
                               />
                               <button className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
                                 <Eye className="h-4 w-4" /> View
@@ -582,6 +603,9 @@ export default function TimesheetApprovals() {
                       entry={entry}
                       open={openActionMenu === entry.id}
                       onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
+                      onApprove={() => updateStatus(entry.id, 'Approved')}
+                      onReject={() => updateStatus(entry.id, 'Rejected')}
+                      onViewDetails={() => setOpenActionMenu(null)}
                     />
                     <button className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700">
                       <MoreHorizontal className="h-4 w-4" />
