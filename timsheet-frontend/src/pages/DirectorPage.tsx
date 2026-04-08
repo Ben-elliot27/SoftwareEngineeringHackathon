@@ -253,7 +253,6 @@ function AccessDenied({ onLogout }: { onLogout: () => void }) {
 export default function TimesheetApprovals() {
   const { loading: authLoading, isAuthenticated, signIn, token, user, logout, error: authError } = useAuthSession();
   const [entries, setEntries] = useState<UiEntry[]>([]);
-  const [selected, setSelected] = useState<number[]>([]);
   const [userFilter, setUserFilter] = useState('All Users');
   const [projectFilter, setProjectFilter] = useState('All Projects');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
@@ -318,8 +317,6 @@ export default function TimesheetApprovals() {
     [entries],
   );
 
-  const totalFilteredHours = useMemo(() => filtered.reduce((sum, item) => sum + item.hours, 0), [filtered]);
-
   const clearAll = () => {
     setUserFilter('All Users');
     setProjectFilter('All Projects');
@@ -328,7 +325,6 @@ export default function TimesheetApprovals() {
     setEndDate('');
     setSearch('');
     setPage(1);
-    setSelected([]);
   };
 
   async function refreshEntries() {
@@ -370,8 +366,6 @@ export default function TimesheetApprovals() {
   if (!(user.role === 'manager' || user.role === 'admin')) {
     return <AccessDenied onLogout={logout} />;
   }
-
-  const selectedPendingIds = entries.filter((item) => selected.includes(item.id) && item.status === 'Pending').map((item) => item.id);
 
   return (
     <div className="min-h-screen bg-[#eef1f6] text-slate-900">
@@ -554,20 +548,6 @@ export default function TimesheetApprovals() {
               <table className="min-w-full">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="w-12 px-6 py-4 text-left">
-                      <input
-                        type="checkbox"
-                        checked={pageItems.length > 0 && pageItems.every((e) => selected.includes(e.id))}
-                        onChange={() => {
-                          const allSelected = pageItems.length > 0 && pageItems.every((e) => selected.includes(e.id));
-                          setSelected(
-                            allSelected
-                              ? selected.filter((id) => !pageItems.some((e) => e.id === id))
-                              : Array.from(new Set([...selected, ...pageItems.map((e) => e.id)])),
-                          );
-                        }}
-                      />
-                    </th>
                     <th className="px-6 py-4 text-left">Date</th>
                     <th className="px-6 py-4 text-left">User</th>
                     <th className="px-6 py-4 text-left">Project</th>
@@ -581,20 +561,9 @@ export default function TimesheetApprovals() {
                 <tbody className="divide-y divide-slate-100">
                   {pageItems.map((entry) => {
                     const menuOpen = openActionMenu === entry.id;
-                    const isSelected = selected.includes(entry.id);
 
                     return (
-                      <tr key={entry.id} className={cx('group transition hover:bg-slate-50', isSelected && 'bg-[#0b2a4a]/5')}>
-                        <td className="px-6 py-5">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() =>
-                              setSelected((prev) => (prev.includes(entry.id) ? prev.filter((id) => id !== entry.id) : [...prev, entry.id]))
-                            }
-                          />
-                        </td>
-
+                      <tr key={entry.id} className="group transition hover:bg-slate-50">
                         <td className="px-6 py-5 text-sm text-slate-600">{entry.date}</td>
 
                         <td className="px-6 py-5">
@@ -639,27 +608,16 @@ export default function TimesheetApprovals() {
             <div className="grid gap-4 p-4 lg:hidden">
               {pageItems.map((entry) => {
                 const menuOpen = openActionMenu === entry.id;
-                const isSelected = selected.includes(entry.id);
 
                 return (
-                  <div key={entry.id} className={cx('rounded-3xl border border-slate-200 bg-white p-4 shadow-sm', isSelected && 'ring-2 ring-[#0b2a4a]/15')}>
+                  <div key={entry.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          className="mt-2"
-                          checked={isSelected}
-                          onChange={() =>
-                            setSelected((prev) => (prev.includes(entry.id) ? prev.filter((id) => id !== entry.id) : [...prev, entry.id]))
-                          }
-                        />
-                        <div>
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                            <Avatar name={entry.user} />
-                            {entry.user}
-                          </div>
-                          <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                          <Avatar name={entry.user} />
+                          {entry.user}
                         </div>
+                        <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
                       </div>
                       <StatusBadge status={entry.status} />
                     </div>
