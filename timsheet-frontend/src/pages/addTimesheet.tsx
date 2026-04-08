@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { createTimesheet, listTimeCodes, type TimeCode } from "../lib/api";
 import { useAuthSession } from "../lib/useAuthSession";
 
@@ -313,6 +313,7 @@ export default function AddTimesheet() {
   const [codesLoading, setCodesLoading] = useState(false);
 
   const weekDays = useMemo(() => getWeekDays(), []);
+  const nextId = useRef(2);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedDays, setSelectedDays] = useState<DayKey[]>(["mo", "tu", "we", "th", "fr"]);
   const [entries, setEntries] = useState<Entry[]>([
@@ -380,7 +381,7 @@ export default function AddTimesheet() {
     setEntries((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id: nextId.current++,
         day: selectedDays[0] ?? "mo",
         project: "",
         task: "",
@@ -417,7 +418,7 @@ export default function AddTimesheet() {
         });
       }
       setFeedback(`${entries.length} ${entries.length === 1 ? "entry" : "entries"} submitted successfully.`);
-      setEntries([{ id: Date.now(), day: selectedDays[0] ?? "mo", project: "", task: "", timeCodeId: apiTimeCodes[0] ? String(apiTimeCodes[0].id) : "", hours: "", notes: "", workType: undefined }]);
+      setEntries([{ id: nextId.current++, day: selectedDays[0] ?? "mo", project: "", task: "", timeCodeId: apiTimeCodes[0] ? String(apiTimeCodes[0].id) : "", hours: "", notes: "", workType: undefined }]);
       setStep(1);
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Unable to submit timesheet");
