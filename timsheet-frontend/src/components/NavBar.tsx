@@ -44,7 +44,7 @@ export default function NavBar() {
               `${baseClass} ${isActive ? activeClass : inactiveClass}`
             }
           >
-            Director Page
+            Approvals
           </NavLink>
         </nav>
       </div>
