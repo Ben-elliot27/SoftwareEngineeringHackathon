@@ -1,22 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
+  BadgeCheck,
   CalendarDays,
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Download,
+  CircleAlert,
+  CircleCheckBig,
+  CircleX,
   Eye,
   Filter,
   Search,
   User2,
-  X,
-  CircleAlert,
-  CircleCheckBig,
-  CircleX,
-  MoreHorizontal,
-  BadgeCheck,
 } from 'lucide-react';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
@@ -55,10 +51,6 @@ function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
-function formatHours(total: number) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(total);
-}
-
 function StatusBadge({ status }: { status: Status }) {
   const styles =
     status === 'Pending'
@@ -68,7 +60,13 @@ function StatusBadge({ status }: { status: Status }) {
         : 'bg-rose-50 text-rose-800 ring-rose-200';
 
   const icon =
-    status === 'Pending' ? <Clock3 className="h-4 w-4" /> : status === 'Approved' ? <CircleCheckBig className="h-4 w-4" /> : <CircleX className="h-4 w-4" />;
+    status === 'Pending' ? (
+      <Clock3 className="h-4 w-4" />
+    ) : status === 'Approved' ? (
+      <CircleCheckBig className="h-4 w-4" />
+    ) : (
+      <CircleX className="h-4 w-4" />
+    );
 
   return (
     <span className={cx('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1', styles)}>
@@ -103,19 +101,19 @@ function MetricCard({
   label: string;
   value: number | string;
   sublabel: string;
-  tone: 'pink' | 'purple' | 'blue';
+  tone: 'red' | 'green' | 'blue';
   icon: React.ReactNode;
 }) {
-  const gradient =
-    tone === 'pink'
-      ? 'from-rose-500 to-rose-400'
-      : tone === 'purple'
-        ? 'from-fuchsia-500 to-violet-500'
-        : 'from-sky-500 to-indigo-500';
+  const accent =
+    tone === 'red'
+      ? 'bg-rose-500'
+      : tone === 'green'
+        ? 'bg-emerald-500'
+        : 'bg-sky-500';
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.10)]">
-      <div className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${gradient}`} />
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className={cx('mb-4 h-1 w-16 rounded-full', accent)} />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm font-medium text-slate-500">{label}</div>
@@ -134,14 +132,12 @@ function ActionMenu({
   onToggle,
   onApprove,
   onReject,
-  onViewDetails,
 }: {
   entry: TimesheetEntry;
   open: boolean;
   onToggle: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onViewDetails: () => void;
 }) {
   return (
     <div className="relative flex">
@@ -169,9 +165,6 @@ function ActionMenu({
           <button onClick={onReject} className="w-full rounded-xl px-3 py-2 text-left text-sm text-[#c51d4a] hover:bg-[#c51d4a]/5">
             Reject
           </button>
-          <button onClick={onViewDetails} className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-slate-100">
-            View Details
-          </button>
         </div>
       ) : null}
     </div>
@@ -184,11 +177,11 @@ function AccessDenied() {
       <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-700">
           <BadgeCheck className="h-4 w-4" />
-          Admin only
+          Director only
         </div>
         <h1 className="mt-4 text-2xl font-semibold text-slate-900">You do not have access to this page</h1>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          This review page is intended for administrators who approve or reject submitted timesheets.
+          This review page is intended for Directors who approve or reject submitted timesheets.
         </p>
       </div>
     </div>
@@ -200,26 +193,24 @@ export default function TimesheetApprovals() {
   if (currentUserRole !== 'admin') return <AccessDenied />;
 
   const [entries, setEntries] = useState<TimesheetEntry[]>(entriesSeed);
-  const [selected, setSelected] = useState<number[]>([]);
   const [userFilter, setUserFilter] = useState('All Users');
   const [projectFilter, setProjectFilter] = useState('All Projects');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
-  const [pageSize, setPageSize] = useState(6);
   const [page, setPage] = useState(1);
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
 
-  const updateStatus = (id: number, status: Status) => {
-    setEntries((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
-    setSelected((prev) => prev.filter((selectedId) => selectedId !== id));
-    setOpenActionMenu(null);
+  const pageSize = 6;
+  const tableRef = useRef<HTMLDivElement | null>(null);
+
+  const handleOpenPendingEntries = () => {
+    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const bulkUpdateStatus = (status: Status) => {
-    setEntries((prev) => prev.map((item) => (selected.includes(item.id) ? { ...item, status } : item)));
-    setSelected([]);
+  const updateStatus = (id: number, status: Status) => {
+    setEntries((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
     setOpenActionMenu(null);
   };
 
@@ -232,7 +223,10 @@ export default function TimesheetApprovals() {
       const statusOk = statusFilter === 'All Status' || entry.status === statusFilter;
       const searchOk =
         !q ||
-        [entry.date, entry.user, entry.project, entry.task, String(entry.hours), entry.status].join(' ').toLowerCase().includes(q);
+        [entry.date, entry.user, entry.project, entry.task, String(entry.hours), entry.status]
+          .join(' ')
+          .toLowerCase()
+          .includes(q);
       const dateOk = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
       return userOk && projectOk && statusOk && searchOk && dateOk;
     });
@@ -244,25 +238,12 @@ export default function TimesheetApprovals() {
 
   const counts = useMemo(
     () => ({
-      totalHours: entries.reduce((sum, entry) => sum + entry.hours, 0),
       approved: entries.filter((e) => e.status === 'Approved').length,
       pending: entries.filter((e) => e.status === 'Pending').length,
       rejected: entries.filter((e) => e.status === 'Rejected').length,
     }),
     [entries],
   );
-
-  const selectedCount = selected.filter((id) => filtered.some((e) => e.id === id)).length;
-
-  const toggle = (id: number) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  };
-
-  const selectAllVisible = () => {
-    const visibleIds = pageItems.map((e) => e.id);
-    const allSelected = visibleIds.every((id) => selected.includes(id));
-    setSelected((prev) => (allSelected ? prev.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...prev, ...visibleIds]))));
-  };
 
   const clearAll = () => {
     setUserFilter('All Users');
@@ -278,38 +259,20 @@ export default function TimesheetApprovals() {
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div className="bg-gradient-to-r from-[#d71920] via-[#c81d5a] to-[#6f2dbd] text-white">
         <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr] lg:items-center">
-            <div className="max-w-2xl">
-              <div className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">CGI Admin Timesheet Review</div>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Timesheet approvals dashboard</h1>
-              <p className="mt-5 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
-                Review submitted timesheets, filter by user, project, date, or status, and approve or reject entries from one admin-only workspace.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <button className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100">
-                  <BadgeCheck className="h-4 w-4" />
-                  Open Pending Entries
-                </button>
-                <button className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15">
-                  <Download className="h-4 w-4" />
-                  Export Review Data
-                </button>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <div className="rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-                <div className="text-xs font-medium text-white/75">Pending for Review</div>
-                <div className="mt-2 text-3xl font-semibold">{counts.pending}</div>
-              </div>
-              <div className="rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-                <div className="text-xs font-medium text-white/75">Approved Today</div>
-                <div className="mt-2 text-3xl font-semibold">{counts.approved}</div>
-              </div>
-              <div className="rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-                <div className="text-xs font-medium text-white/75">Rejected Today</div>
-                <div className="mt-2 text-3xl font-semibold">{counts.rejected}</div>
-              </div>
+          <div className="max-w-2xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">CGI Timesheet Review</div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Timesheet Review Dashboard</h1>
+            <p className="mt-5 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
+              Review submitted timesheets, filter by user, project, date, or status, and approve or reject entries from one.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button
+                onClick={handleOpenPendingEntries}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+              >
+                <BadgeCheck className="h-4 w-4" />
+                Open Pending Entries
+              </button>
             </div>
           </div>
         </div>
@@ -317,12 +280,30 @@ export default function TimesheetApprovals() {
 
       <main className="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-10">
         <div className="grid gap-4 lg:grid-cols-3">
-          <MetricCard label="This Month" value={formatHours(counts.totalHours)} sublabel="Logged hours so far" tone="pink" icon={<Clock3 className="h-4 w-4" />} />
-          <MetricCard label="Approvals" value={counts.approved} sublabel="Ready for payroll" tone="purple" icon={<CircleCheckBig className="h-4 w-4" />} />
-          <MetricCard label="Pending Review" value={counts.pending} sublabel="Entries awaiting action" tone="blue" icon={<CircleAlert className="h-4 w-4" />} />
+          <MetricCard
+            label="Rejected Timesheets"
+            value={counts.rejected}
+            sublabel="Entries rejected by admins"
+            tone="red"
+            icon={<CircleX className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Approved Timesheets"
+            value={counts.approved}
+            sublabel="Ready for payroll"
+            tone="green"
+            icon={<CircleCheckBig className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Pending Review"
+            value={counts.pending}
+            sublabel="Entries awaiting action"
+            tone="blue"
+            icon={<CircleAlert className="h-4 w-4" />}
+          />
         </div>
 
-        <div className="mt-6 space-y-5">
+        <div ref={tableRef} className="mt-6 space-y-5">
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -425,31 +406,6 @@ export default function TimesheetApprovals() {
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => bulkUpdateStatus('Approved')}
-                disabled={selectedCount === 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0b2a4a] px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-[#102f50] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" />
-                Approve Selected ({selectedCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => bulkUpdateStatus('Rejected')}
-                disabled={selectedCount === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#c51d4a]/15 bg-white px-4 py-3 text-sm font-medium text-[#c51d4a] shadow-sm transition hover:bg-[#c51d4a]/5 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <X className="h-4 w-4" />
-                Reject Selected ({selectedCount})
-              </button>
-              <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-                <Download className="h-4 w-4" />
-                Export
-              </button>
-            </div>
-
             <label className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:max-w-sm">
               <Search className="h-4 w-4 text-slate-500" />
               <input
@@ -464,73 +420,57 @@ export default function TimesheetApprovals() {
             </label>
           </div>
 
-          <div className="hidden overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm lg:block">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr className="text-left text-sm font-semibold text-slate-700">
-                    <th className="w-12 px-4 py-4">
-                      <input
-                        type="checkbox"
-                        checked={pageItems.length > 0 && pageItems.every((e) => selected.includes(e.id))}
-                        onChange={selectAllVisible}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
-                        aria-label="Select all visible"
-                      />
-                    </th>
-                    <th className="px-4 py-4">Date</th>
-                    <th className="px-4 py-4">User</th>
-                    <th className="px-4 py-4">Project</th>
-                    <th className="px-4 py-4">Task</th>
-                    <th className="px-4 py-4">Hours</th>
-                    <th className="px-4 py-4">Status</th>
-                    <th className="px-4 py-4">Actions</th>
+          <div className="hidden lg:block">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+              <table className="min-w-full">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4 text-left">Date</th>
+                    <th className="px-6 py-4 text-left">User</th>
+                    <th className="px-6 py-4 text-left">Project</th>
+                    <th className="px-6 py-4 text-left">Task</th>
+                    <th className="px-6 py-4 text-left">Hours</th>
+                    <th className="px-6 py-4 text-left">Status</th>
+                    <th className="px-6 py-4 text-left">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+
+                <tbody className="divide-y divide-slate-100">
                   {pageItems.map((entry) => {
-                    const selectedRow = selected.includes(entry.id);
                     const menuOpen = openActionMenu === entry.id;
 
                     return (
-                      <tr key={entry.id} className={cx('transition hover:bg-slate-50', selectedRow && 'bg-[#0b2a4a]/5')}>
-                        <td className="px-4 py-4 align-middle">
-                          <input
-                            type="checkbox"
-                            checked={selectedRow}
-                            onChange={() => toggle(entry.id)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
-                            aria-label={`Select row ${entry.id}`}
-                          />
-                        </td>
-                        <td className="px-4 py-4 text-sm text-slate-700">{entry.date}</td>
-                        <td className="px-4 py-4">
+                      <tr key={entry.id} className="group transition hover:bg-slate-50">
+                        <td className="px-6 py-5 text-sm text-slate-600">{entry.date}</td>
+
+                        <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             <Avatar name={entry.user} />
                             <span className="text-sm font-medium text-slate-900">{entry.user}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-slate-700">{entry.project}</td>
-                        <td className="px-4 py-4 text-sm text-slate-700">{entry.task}</td>
-                        <td className="px-4 py-4 text-sm text-slate-700">{entry.hours}</td>
-                        <td className="px-4 py-4">
+
+                        <td className="px-6 py-5 text-sm text-slate-600">{entry.project}</td>
+                        <td className="px-6 py-5 text-sm text-slate-600">{entry.task}</td>
+                        <td className="px-6 py-5 text-sm font-medium text-slate-800">{entry.hours}</td>
+
+                        <td className="px-6 py-5">
                           <StatusBadge status={entry.status} />
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
+
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
                             <ActionMenu
                               entry={entry}
                               open={menuOpen}
                               onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
                               onApprove={() => updateStatus(entry.id, 'Approved')}
                               onReject={() => updateStatus(entry.id, 'Rejected')}
-                              onViewDetails={() => setOpenActionMenu(null)}
                             />
-                            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-                              <Eye className="h-4 w-4" /> View
-                            </button>
-                            <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100">
-                              <MoreHorizontal className="h-4 w-4" />
+
+                            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+                              <Eye className="h-4 w-4" />
+                              View
                             </button>
                           </div>
                         </td>
@@ -546,21 +486,13 @@ export default function TimesheetApprovals() {
             {pageItems.map((entry) => (
               <div key={entry.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
-                  <label className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(entry.id)}
-                      onChange={() => toggle(entry.id)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0b2a4a] focus:ring-[#0b2a4a]"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                        <Avatar name={entry.user} />
-                        {entry.user}
-                      </div>
-                      <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                      <Avatar name={entry.user} />
+                      {entry.user}
                     </div>
-                  </label>
+                    <p className="mt-2 text-sm text-slate-500">{entry.date}</p>
+                  </div>
                   <StatusBadge status={entry.status} />
                 </div>
 
@@ -591,11 +523,7 @@ export default function TimesheetApprovals() {
                     onToggle={() => setOpenActionMenu((curr) => (curr === entry.id ? null : entry.id))}
                     onApprove={() => updateStatus(entry.id, 'Approved')}
                     onReject={() => updateStatus(entry.id, 'Rejected')}
-                    onViewDetails={() => setOpenActionMenu(null)}
                   />
-                  <button className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
             ))}
@@ -603,7 +531,8 @@ export default function TimesheetApprovals() {
 
           <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row">
             <div className="text-sm text-slate-500">
-              Showing <span className="font-medium text-slate-700">{pageItems.length}</span> of <span className="font-medium text-slate-700">{filtered.length}</span> filtered entries
+              Showing <span className="font-medium text-slate-700">{pageItems.length}</span> of{' '}
+              <span className="font-medium text-slate-700">{filtered.length}</span> filtered entries
             </div>
 
             <div className="flex items-center gap-2">
