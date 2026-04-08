@@ -264,7 +264,7 @@ export default function TimesheetApprovals() {
                 await refreshEntries();
 
                 if (failedCount > 0) {
-                  setError(`${failedCount} approval request${failedCount === 1 ? "" : "s"} failed`);
+                  setError(`${failedCount} approval request${failedCount === 1 ? "" : "s"} failed. Please retry or check permissions.`);
                 }
               } catch (bulkError: unknown) {
                 setError(bulkError instanceof Error ? bulkError.message : "Bulk approval failed");
@@ -289,7 +289,7 @@ export default function TimesheetApprovals() {
                 await refreshEntries();
 
                 if (failedCount > 0) {
-                  setError(`${failedCount} rejection request${failedCount === 1 ? "" : "s"} failed`);
+                  setError(`${failedCount} rejection request${failedCount === 1 ? "" : "s"} failed. Please retry or check permissions.`);
                 }
               } catch (bulkError: unknown) {
                 setError(bulkError instanceof Error ? bulkError.message : "Bulk rejection failed");
