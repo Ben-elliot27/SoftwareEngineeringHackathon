@@ -52,11 +52,21 @@ export function useAuthSession() {
   }, [token]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const nextToken = await login(email, password);
-    storeToken(nextToken);
-    setLoading(true);
-    setToken(nextToken);
     setError("");
+    setLoading(true);
+
+    try {
+      const nextToken = await login(email, password);
+      storeToken(nextToken);
+      setToken(nextToken);
+      setUser(null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Authentication failed");
+      clearToken();
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    }
   }, []);
 
   return {

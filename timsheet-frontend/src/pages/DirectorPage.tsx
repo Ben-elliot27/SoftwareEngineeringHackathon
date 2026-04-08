@@ -64,8 +64,10 @@ function LoginView({ onLogin, error }: { onLogin: (email: string, password: stri
       >
         <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
         <p className="mt-1 text-sm text-slate-500">Authenticate to review and approve timesheets.</p>
-        <input className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
-        <input className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="director-login-email">Email</label>
+        <input id="director-login-email" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+        <label className="mt-3 block text-sm font-medium text-slate-700" htmlFor="director-login-password">Password</label>
+        <input id="director-login-password" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
         <button className="mt-5 w-full rounded-xl bg-slate-900 px-3 py-2 font-semibold text-white" type="submit">Sign in</button>
       </form>
@@ -244,19 +246,51 @@ export default function TimesheetApprovals() {
 
           <div className="flex flex-wrap gap-3">
             <button className="rounded-xl bg-[#0b2a4a] px-4 py-2 text-sm text-white disabled:opacity-50" disabled={selected.length === 0} onClick={async () => {
+              const pendingSelected = entries.filter((item) => selected.includes(item.id) && item.status === "Pending");
+              if (pendingSelected.length === 0) {
+                setError("Only pending entries can be approved in bulk");
+                return;
+              }
+
+              setError("");
               try {
-                await Promise.all(selected.map((id) => approveTimesheet(token, id)));
-                setSelected([]);
+                const results = await Promise.allSettled(pendingSelected.map((item) => approveTimesheet(token, item.id)));
+                const succeededIds = pendingSelected
+                  .filter((_, index) => results[index]?.status === "fulfilled")
+                  .map((item) => item.id);
+                const failedCount = results.length - succeededIds.length;
+
+                setSelected((current) => current.filter((id) => !succeededIds.includes(id)));
                 await refreshEntries();
+
+                if (failedCount > 0) {
+                  setError(`${failedCount} approval request${failedCount === 1 ? "" : "s"} failed`);
+                }
               } catch (bulkError: unknown) {
                 setError(bulkError instanceof Error ? bulkError.message : "Bulk approval failed");
               }
             }}>Approve Selected ({selected.length})</button>
             <button className="rounded-xl border border-[#c51d4a]/25 px-4 py-2 text-sm text-[#c51d4a] disabled:opacity-50" disabled={selected.length === 0} onClick={async () => {
+              const pendingSelected = entries.filter((item) => selected.includes(item.id) && item.status === "Pending");
+              if (pendingSelected.length === 0) {
+                setError("Only pending entries can be rejected in bulk");
+                return;
+              }
+
+              setError("");
               try {
-                await Promise.all(selected.map((id) => rejectTimesheet(token, id, "Rejected in bulk")));
-                setSelected([]);
+                const results = await Promise.allSettled(pendingSelected.map((item) => rejectTimesheet(token, item.id, "Rejected in bulk")));
+                const succeededIds = pendingSelected
+                  .filter((_, index) => results[index]?.status === "fulfilled")
+                  .map((item) => item.id);
+                const failedCount = results.length - succeededIds.length;
+
+                setSelected((current) => current.filter((id) => !succeededIds.includes(id)));
                 await refreshEntries();
+
+                if (failedCount > 0) {
+                  setError(`${failedCount} rejection request${failedCount === 1 ? "" : "s"} failed`);
+                }
               } catch (bulkError: unknown) {
                 setError(bulkError instanceof Error ? bulkError.message : "Bulk rejection failed");
               }

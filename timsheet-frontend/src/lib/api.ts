@@ -110,16 +110,34 @@ export async function login(email: string, password: string) {
   return token.access_token;
 }
 
+let accessToken: string | null = null;
+
 export function getStoredToken() {
-  return window.localStorage.getItem("access_token");
+  if (accessToken) {
+    return accessToken;
+  }
+
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const sessionToken = window.sessionStorage.getItem("access_token");
+  accessToken = sessionToken;
+  return sessionToken;
 }
 
 export function storeToken(token: string) {
-  window.localStorage.setItem("access_token", token);
+  accessToken = token;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem("access_token", token);
+  }
 }
 
 export function clearToken() {
-  window.localStorage.removeItem("access_token");
+  accessToken = null;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem("access_token");
+  }
 }
 
 export function getCurrentUser(token: string) {

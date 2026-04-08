@@ -63,8 +63,10 @@ function LoginView({ onLogin, error }: { onLogin: (email: string, password: stri
       >
         <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
         <p className="mt-1 text-sm text-slate-500">Authenticate to create timesheet entries.</p>
-        <input className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
-        <input className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="add-timesheet-login-email">Email</label>
+        <input id="add-timesheet-login-email" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+        <label className="mt-3 block text-sm font-medium text-slate-700" htmlFor="add-timesheet-login-password">Password</label>
+        <input id="add-timesheet-login-password" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
         <button className="mt-5 w-full rounded-xl bg-slate-900 px-3 py-2 font-semibold text-white" type="submit">Sign in</button>
       </form>
@@ -102,7 +104,9 @@ export default function AddTimesheet() {
       listTimeCodes(token),
       listTimesheets(token),
       user.role === "admin" ? listUsers(token).catch((loadError: unknown) => {
-        setError(loadError instanceof Error ? loadError.message : "Unable to load all users; using your account only.");
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Unable to load all users; using your account only.");
+        }
         return [user];
       }) : Promise.resolve([user]),
     ])
