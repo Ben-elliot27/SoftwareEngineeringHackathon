@@ -15,10 +15,9 @@ import { useAuthSession } from "../lib/useAuthSession";
 
 type UiStatus = "Pending" | "Approved" | "Rejected";
 
-type TimesheetRow = {
+type Entry = {
   id: number;
-  date: string;
-  user: string;
+  day: DayKey;
   project: string;
   task: string;
   timeCode: string;
@@ -160,6 +159,14 @@ export default function AddTimesheet() {
     const data = await listTimesheets(authToken);
     setRows(data.map(toRow).sort((a, b) => b.date.localeCompare(a.date)));
   }
+
+  const saveTimesheet = () => {
+    // Hook this into your API or parent state.
+    console.log({ selectedDays, entries, totals });
+    alert("Timesheet ready to save. Connect this button to your API.");
+  };
+
+  const nextDisabled = step === 1 && selectedDays.length === 0;
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 text-slate-900">
