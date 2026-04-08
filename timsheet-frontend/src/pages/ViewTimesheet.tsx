@@ -225,14 +225,6 @@ export default function WeeklyTimesheetPage({
                       </div>
                     )}
                   </div>
-
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-sky-600 transition hover:text-sky-700"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add
-                  </button>
                 </div>
               ))}
             </div>
@@ -251,22 +243,6 @@ export default function WeeklyTimesheetPage({
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={onApprove}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#0b2a4a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#102f50]"
-          >
-            <CircleCheckBig className="h-4 w-4" />
-            Approve Timesheet
-          </button>
-          <button
-            type="button"
-            onClick={onReject}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[#c51d4a]/20 bg-white px-4 py-3 text-sm font-semibold text-[#c51d4a] transition hover:bg-[#c51d4a]/5"
-          >
-            <CircleX className="h-4 w-4" />
-            Reject Timesheet
-          </button>
         </div>
       </div>
     </div>
