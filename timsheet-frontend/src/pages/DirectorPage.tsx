@@ -25,6 +25,7 @@ import { useAuthSession } from '../lib/useAuthSession';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
 type StatusFilter = 'All Status' | Status;
+import { Link } from 'react-router-dom';
 
 type UiEntry = {
   id: number;
@@ -636,9 +637,14 @@ export default function TimesheetApprovals() {
                         <div className="font-medium text-slate-900">{entry.hours}</div>
                       </div>
                       <div className="flex items-end justify-end gap-2">
-                        <button className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700">
+                        <Link
+                          to="/view-timesheet"
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                        >
+                          <Eye className="h-4 w-4" />
                           View
-                        </button>
+                        </Link>
+
                       </div>
                     </div>
 
