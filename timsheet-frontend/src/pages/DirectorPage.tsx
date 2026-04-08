@@ -383,7 +383,7 @@ export default function TimesheetApprovals() {
                         <option key={u}>{u}</option>
                       ))}
                     </select>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                    
                   </div>
                 </label>
 
@@ -433,7 +433,7 @@ export default function TimesheetApprovals() {
                         <option key={p}>{p}</option>
                       ))}
                     </select>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                    
                   </div>
                 </label>
 
@@ -453,7 +453,7 @@ export default function TimesheetApprovals() {
                         <option key={s}>{s}</option>
                       ))}
                     </select>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                    
                   </div>
                 </label>
               </div>
@@ -498,48 +498,6 @@ export default function TimesheetApprovals() {
                   placeholder="Search entries"
                 />
               </label>
-            </div>
-
-            {/* Secondary row */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  disabled={selectedCount === 0}
-                  className="inline-flex items-center gap-3 rounded-xl bg-[#0b2a4a] px-4 py-3 text-white shadow-sm transition hover:bg-[#102f50] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Check className="h-5 w-5" />
-                  <span className="font-medium">Approve {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={selectedCount === 0}
-                  className="inline-flex items-center gap-3 rounded-xl border border-[#c51d4a]/15 bg-white px-4 py-3 text-[#c51d4a] shadow-sm transition hover:bg-[#c51d4a]/5 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <X className="h-5 w-5" />
-                  <span className="font-medium">Reject {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <span className="text-sm text-slate-500">Rows per page</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="bg-transparent text-sm outline-none"
-                >
-                  {[5, 6, 10, 20].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             {/* Table */}
