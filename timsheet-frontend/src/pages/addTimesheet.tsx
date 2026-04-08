@@ -101,7 +101,10 @@ export default function AddTimesheet() {
     Promise.all([
       listTimeCodes(token),
       listTimesheets(token),
-      user.role === "admin" ? listUsers(token).catch(() => [user]) : Promise.resolve([user]),
+      user.role === "admin" ? listUsers(token).catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load all users; using your account only.");
+        return [user];
+      }) : Promise.resolve([user]),
     ])
       .then(([codes, entries, users]) => {
         if (cancelled) return;
@@ -221,7 +224,7 @@ export default function AddTimesheet() {
                   time_code_id: Number(form.timeCodeId),
                   entry_date: form.date,
                   hours: Number(form.hours),
-                  description: `${form.project} | ${form.task}${form.notes ? ` | ${form.notes}` : ""}`,
+                  description: form.notes.trim() || `${form.project} - ${form.task}`,
                 });
                 setFeedback("Timesheet entry submitted.");
                 await refreshRows();

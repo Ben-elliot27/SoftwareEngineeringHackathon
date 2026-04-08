@@ -167,7 +167,7 @@ export function rejectTimesheet(token: string, entryId: number, rejectionReason:
     `/api/v1/timesheets/${entryId}/reject`,
     {
       method: "POST",
-      body: JSON.stringify({ rejection_reason: rejectionReason || null }),
+      body: JSON.stringify({ rejection_reason: rejectionReason }),
     },
     token,
   );
