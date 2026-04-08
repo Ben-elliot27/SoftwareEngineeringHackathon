@@ -10,6 +10,7 @@ type Entry = {
   timeCode: string;
   hours: string;
   notes: string;
+  workType?: "internal" | "non-work";
 };
 
 const dayOrder: { key: DayKey; label: string }[] = [
@@ -435,6 +436,54 @@ export default function AddTimesheet() {
                             onChange={(e) => updateEntry(entry.id, { hours: e.target.value })}
                           />
                         </div>
+                      </div>
+
+                      <div style={{ position: "relative" }}>
+                        <label className="text-sm font-medium text-slate-700">Work Type</label>
+                        <select
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                          style={{
+                            position: "relative",
+                            zIndex: 10,
+                          }}
+                          value={entry.workType || ""}
+                          onChange={(e) =>
+                            updateEntry(entry.id, {
+                              workType: e.target.value as any,
+                            })
+                          }
+                        >
+                          <option value="Administration">Administration</option>
+                          <option value="Training">Training</option>
+                          <option value="Training AI">Training AI</option>
+                          <option value="Proposal">Proposal</option>
+                          <option value="In Between Assignments">In Between Assignments</option>
+                          <option value="Reservist Leave">Reservist Leave</option>
+                          <option value="Statutory Holiday">Statutory Holiday</option>
+                          <option value="Vacation">Vacation</option>
+                          <option value="Compensatory Time">Compensatory Time</option>
+                          <option value="Sick Leave">Sick Leave</option>
+                          <option value="Exam/Study Leave">Exam/Study Leave</option>
+                          <option value="Public Services Leave">Public Services Leave</option>
+                          <option value="Floating/DeferredHoliday Taken">Floating/DeferredHoliday Taken</option>
+                          <option value="Bereavement Leave">Bereavement Leave</option>
+                          <option value="Jury Duty Leave">Jury Duty Leave</option>
+                          <option value="Military Leave">Military Leave</option>
+                          <option value="Paternity Leave">Paternity Leave</option>
+                          <option value="Family Support Leave">Family Support Leave</option>
+                          <option value="Administrative Leave">Administrative Leave</option>
+                          <option value="Unpaid Leave">Unpaid Leave</option>
+                          <option value="Unpaid Sick Leave">Unpaid Sick Leave</option>
+                          <option value="Grad Return to Work Off Days">Grad Return to Work Off Days</option>
+                          <option value="Carer Leave">Carer Leave</option>
+                          <option value="Prenatal Exam/Course">Prenatal Exam/Course</option>
+                          <option value="Partner Prenatal Assist Leave">Partner Prenatal Assist Leave</option>
+                          <option value="Unpaid Parental Leave">Unpaid Parental Leave</option>
+                          <option value="Strike">Strike</option>
+                          <option value="Union Duties Leave">Union Duties Leave</option>
+                          <option value="Defer Statutory Holiday">Defer Statutory Holiday</option>
+                          <option value="Parental Bereavement Leave">Parental Bereavement Leave</option>
+                        </select>
                       </div>
 
                       <div style={{ marginTop: 12 }}>
