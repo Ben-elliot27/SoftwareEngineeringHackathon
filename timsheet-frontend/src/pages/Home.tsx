@@ -168,7 +168,7 @@ export default function TimesheetWebsite() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
-                  href="#"
+                  href="/add-timesheet"
                   className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100"
                 >
                   Go to Add Timesheet Page
