@@ -1,20 +1,18 @@
 import React, { useMemo, useState } from "react";
 
 type DayKey = "su" | "mo" | "tu" | "we" | "th" | "fr" | "sa";
-type Status = "Pending" | "Approved" | "Rejected";
 
-type TimesheetRow = {
+type Entry = {
   id: number;
-  date: string;
-  user: string;
+  day: DayKey;
   project: string;
   task: string;
   timeCode: string;
-  hours: number;
-  status: Status;
+  hours: string;
+  notes: string;
 };
 
-const dayLabels: { key: DayKey; label: string }[] = [
+const dayOrder: { key: DayKey; label: string }[] = [
   { key: "su", label: "Su" },
   { key: "mo", label: "Mo" },
   { key: "tu", label: "Tu" },
@@ -24,11 +22,8 @@ const dayLabels: { key: DayKey; label: string }[] = [
   { key: "sa", label: "Sa" },
 ];
 
-const users = ["Camila Adams", "Mark Patel", "Liam Whitehead", "Sarah Lin"];
 const projects = ["Project A", "Project B", "Project C", "Client Portal", "Internal Ops"];
 const tasks = ["Development", "Testing", "Research", "Meetings", "Design", "Support"];
-const billingActions = ["Billable", "Non-billable"];
-
 const timeCodes = [
   { code: "DEV", label: "Development" },
   { code: "MTG", label: "Meetings" },
@@ -41,29 +36,86 @@ const timeCodes = [
   { code: "TRN", label: "Training" },
 ];
 
-const initialRows: TimesheetRow[] = [
-  { id: 1, date: "2024-04-24", user: "Camila Adams", project: "Project A", task: "Development", timeCode: "DEV", hours: 8, status: "Pending" },
-  { id: 2, date: "2024-04-23", user: "Mark Patel", project: "Project A", task: "Development", timeCode: "DEV", hours: 7.5, status: "Approved" },
-  { id: 3, date: "2024-04-23", user: "Mark Patel", project: "Project B", task: "Testing", timeCode: "QA", hours: 6, status: "Pending" },
-  { id: 4, date: "2024-04-22", user: "Liam Whitehead", project: "Project C", task: "Research", timeCode: "RES", hours: 5, status: "Approved" },
-  { id: 5, date: "2024-04-21", user: "Sarah Lin", project: "Project B", task: "Development", timeCode: "DEV", hours: 6.5, status: "Pending" },
-  { id: 6, date: "2024-04-21", user: "Sarah Lin", project: "Project A", task: "Development", timeCode: "DEV", hours: 6.5, status: "Rejected" },
-];
+function getWeekDays() {
+  const today = new Date();
+  const sunday = new Date(today);
+  sunday.setHours(0, 0, 0, 0);
+  sunday.setDate(today.getDate() - today.getDay());
+
+  return dayOrder.map((d, index) => {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + index);
+    return {
+      key: d.key,
+      label: d.label,
+      dateLabel: String(date.getDate()),
+      longLabel: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    };
+  });
+}
 
 function parseHours(value: string) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 }
 
-function sumDays(days: Record<DayKey, string>) {
-  return dayLabels.reduce((total, d) => total + parseHours(days[d.key]), 0);
+function sumHours(entries: Entry[]) {
+  return entries.reduce((total, entry) => total + parseHours(entry.hours), 0);
 }
 
-function inputStyle(extra: React.CSSProperties = {}): React.CSSProperties {
+function hoursByDay(entries: Entry[]) {
+  return dayOrder.reduce((acc, day) => {
+    acc[day.key] = entries
+      .filter((e) => e.day === day.key)
+      .reduce((sum, e) => sum + parseHours(e.hours), 0);
+    return acc;
+  }, {} as Record<DayKey, number>);
+}
+
+function formatDayName(key: DayKey) {
+  return dayOrder.find((d) => d.key === key)?.label ?? key;
+}
+
+function stepCircleStyle(active: boolean, done: boolean): React.CSSProperties {
+  return {
+    width: 32,
+    height: 32,
+    borderRadius: "9999px",
+    display: "grid",
+    placeItems: "center",
+    fontWeight: 700,
+    fontSize: 14,
+    border: `2px solid ${active || done ? "#2f7df6" : "#d1d5db"}`,
+    background: active ? "#2f7df6" : done ? "#e8f1ff" : "#f8fafc",
+    color: active ? "white" : done ? "#2f7df6" : "#9ca3af",
+  };
+}
+
+function panelStyle(): React.CSSProperties {
+  return {
+    background: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: 24,
+    boxShadow: "0 8px 30px rgba(15, 23, 42, 0.06)",
+    overflow: "hidden",
+  };
+}
+
+function labelStyle(): React.CSSProperties {
+  return {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#64748b",
+    marginBottom: 6,
+  };
+}
+
+function fieldStyle(extra: React.CSSProperties = {}): React.CSSProperties {
   return {
     width: "100%",
-    borderRadius: 12,
-    border: "1px solid #d6dbe3",
+    minHeight: 42,
+    borderRadius: 14,
+    border: "1px solid #dbe3ef",
     background: "#fff",
     padding: "10px 12px",
     fontSize: 14,
@@ -73,485 +125,442 @@ function inputStyle(extra: React.CSSProperties = {}): React.CSSProperties {
   };
 }
 
-function selectStyle(extra: React.CSSProperties = {}): React.CSSProperties {
-  return {
-    ...inputStyle(),
-    height: 42,
-    ...extra,
-  };
-}
-
-function buttonStyle(variant: "primary" | "outline" | "danger" = "outline"): React.CSSProperties {
+function buttonStyle(variant: "primary" | "outline" | "soft" = "outline"): React.CSSProperties {
   if (variant === "primary") {
     return {
-      borderRadius: 12,
-      border: "1px solid #2563eb",
-      background: "#2563eb",
+      borderRadius: 14,
+      border: "1px solid #2f7df6",
+      background: "#2f7df6",
       color: "white",
-      padding: "10px 16px",
-      fontWeight: 600,
+      padding: "12px 18px",
+      fontWeight: 700,
       cursor: "pointer",
+      minWidth: 120,
     };
   }
-  if (variant === "danger") {
+
+  if (variant === "soft") {
     return {
-      borderRadius: 12,
-      border: "1px solid #fecaca",
-      background: "#fef2f2",
-      color: "#b91c1c",
-      padding: "10px 16px",
-      fontWeight: 600,
+      borderRadius: 14,
+      border: "1px solid #dbe3ef",
+      background: "#f8fafc",
+      color: "#0f172a",
+      padding: "12px 18px",
+      fontWeight: 700,
       cursor: "pointer",
+      minWidth: 120,
     };
   }
+
   return {
-    borderRadius: 12,
-    border: "1px solid #cbd5e1",
-    background: "#fff",
+    borderRadius: 14,
+    border: "1px solid #dbe3ef",
+    background: "white",
     color: "#334155",
-    padding: "10px 16px",
-    fontWeight: 600,
+    padding: "12px 18px",
+    fontWeight: 700,
     cursor: "pointer",
+    minWidth: 120,
   };
 }
 
-function StatCard({
+function DayPill({
   label,
-  value,
-  background,
+  dateLabel,
+  selected,
+  onClick,
 }: {
   label: string;
-  value: string;
-  background: string;
+  dateLabel: string;
+  selected: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div style={{ borderRadius: 16, border: "1px solid #e2e8f0", background, padding: 16 }}>
-      <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-      <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{value}</div>
-    </div>
+    <button
+      onClick={onClick}
+      style={{
+        width: 76,
+        height: 70,
+        borderRadius: 16,
+        border: `2px solid ${selected ? "#2f7df6" : "#dde4ee"}`,
+        background: selected ? "#eff6ff" : "white",
+        boxShadow: selected ? "0 8px 18px rgba(47, 125, 246, 0.15)" : "none",
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        padding: 0,
+      }}
+      type="button"
+    >
+      <div style={{ textAlign: "center", lineHeight: 1.05 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: selected ? "#2f7df6" : "#475569" }}>{label}</div>
+        <div style={{ marginTop: 4, fontSize: 16, fontWeight: 700, color: selected ? "#2f7df6" : "#0f172a" }}>{dateLabel}</div>
+      </div>
+    </button>
   );
 }
 
-function StatusBadge({ status }: { status: Status }) {
-  const styles: Record<Status, React.CSSProperties> = {
-    Pending: { background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" },
-    Approved: { background: "#d1fae5", color: "#065f46", border: "1px solid #a7f3d0" },
-    Rejected: { background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" },
-  };
-
+function QuickButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <span
+    <button
+      type="button"
+      onClick={onClick}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        borderRadius: 9999,
-        padding: "6px 12px",
-        fontSize: 13,
+        ...buttonStyle("soft"),
+        minWidth: 110,
+        padding: "10px 14px",
         fontWeight: 600,
-        ...styles[status],
       }}
     >
-      {status}
-    </span>
+      {label}
+    </button>
   );
 }
 
 export default function AddTimesheet() {
-  const [rows, setRows] = useState<TimesheetRow[]>(initialRows);
-  const [search, setSearch] = useState("");
+  const weekDays = useMemo(() => getWeekDays(), []);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selectedDays, setSelectedDays] = useState<DayKey[]>(["mo", "tu", "we", "th", "fr"]);
+  const [entries, setEntries] = useState<Entry[]>([
+    {
+      id: 1,
+      day: "mo",
+      project: "",
+      task: "",
+      timeCode: "DEV",
+      hours: "",
+      notes: "",
+    },
+  ]);
 
-  const [form, setForm] = useState({
-    user: "",
-    date: "",
-    project: "",
-    timeCode: "DEV",
-    task: "Development",
-    hours: "",
-    notes: "",
-  });
-
-  const [projectHours, setProjectHours] = useState({
-    project: "",
-    activity: "",
-    sourceType: "10000",
-    category: "10100",
-    subcategory: "",
-    payrollCategory: "",
-    billingAction: "Billable",
-    su: "",
-    mo: "",
-    tu: "",
-    we: "",
-    th: "",
-    fr: "",
-    sa: "",
-  });
-
-  const [nonWorked, setNonWorked] = useState<Record<string, Record<DayKey, string>>>({
-    Administration: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    Training: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    Vacation: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    "Sick Leave": { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-  });
-
-  const filteredRows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((row) =>
-      [row.date, row.user, row.project, row.task, row.timeCode, row.status, String(row.hours)].some((v) =>
-        v.toLowerCase().includes(q)
-      )
-    );
-  }, [search, rows]);
-
-  const stats = useMemo(() => {
+  const totals = useMemo(() => {
+    const byDay = hoursByDay(entries);
     return {
-      pending: rows.filter((r) => r.status === "Pending").length,
-      approved: rows.filter((r) => r.status === "Approved").length,
-      rejected: rows.filter((r) => r.status === "Rejected").length,
-      hours: rows.reduce((sum, r) => sum + r.hours, 0),
+      total: sumHours(entries),
+      byDay,
     };
-  }, [rows]);
+  }, [entries]);
 
-  const projectTotal = useMemo(() => sumDays(projectHours), [projectHours]);
+  const toggleDay = (day: DayKey) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => dayOrder.findIndex((d) => d.key === a) - dayOrder.findIndex((d) => d.key === b))
+    );
+  };
 
-  const approve = (id: number) => setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "Approved" } : r)));
-  const reject = (id: number) => setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "Rejected" } : r)));
+  const selectOnly = (days: DayKey[]) => setSelectedDays(days);
 
-  const submitAdd = () => {
-    if (!form.user || !form.date || !form.project || !form.hours) return;
-    setRows((prev) => [
+  const updateEntry = (id: number, patch: Partial<Entry>) => {
+    setEntries((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const addEntry = () => {
+    setEntries((prev) => [
+      ...prev,
       {
         id: Date.now(),
-        user: form.user,
-        date: form.date,
-        project: form.project,
-        timeCode: form.timeCode,
-        task: form.task,
-        hours: Number(form.hours),
-        status: "Pending",
+        day: selectedDays[0] ?? "mo",
+        project: "",
+        task: "",
+        timeCode: "DEV",
+        hours: "",
+        notes: "",
       },
-      ...prev,
     ]);
-    setForm({
-      user: "",
-      date: "",
-      project: "",
-      timeCode: "DEV",
-      task: "Development",
-      hours: "",
-      notes: "",
-    });
   };
 
-  const clearAll = () => {
-    setForm({
-      user: "",
-      date: "",
-      project: "",
-      timeCode: "DEV",
-      task: "Development",
-      hours: "",
-      notes: "",
-    });
-    setProjectHours({
-      project: "",
-      activity: "",
-      sourceType: "10000",
-      category: "10100",
-      subcategory: "",
-      payrollCategory: "",
-      billingAction: "Billable",
-      su: "",
-      mo: "",
-      tu: "",
-      we: "",
-      th: "",
-      fr: "",
-      sa: "",
-    });
-    setNonWorked({
-      Administration: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      Training: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      Vacation: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      "Sick Leave": { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    });
+  const removeEntry = (id: number) => {
+    setEntries((prev) => (prev.length === 1 ? prev : prev.filter((row) => row.id !== id)));
   };
+
+  const saveTimesheet = () => {
+    // Hook this into your API or parent state.
+    console.log({ selectedDays, entries, totals });
+    alert("Timesheet ready to save. Connect this button to your API.");
+  };
+
+  const nextDisabled = step === 1 && selectedDays.length === 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" }}>
-      <div
-        style={{
-          background: "linear-gradient(90deg, #d71920 0%, #c81d5a 50%, #6f2dbd 100%)",
-          color: "white",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 24px" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.8 }}>
-            CGI Timesheet Portal
-          </div>
-          <h1 style={{ fontSize: 42, lineHeight: 1.1, margin: "12px 0 0", fontWeight: 700 }}>
-            Create Time Report
-          </h1>
-          <p style={{ margin: "12px 0 0", maxWidth: 760, fontSize: 16, opacity: 0.92 }}>
-            Enter project hours and non-worked hours in the same layout as your enterprise timesheet.
-          </p>
+    <div style={{ minHeight: "100vh", background: "#f4f7fb", padding: 24, color: "#0f172a" }}>
+      <div style={{ maxWidth: 980, margin: "0 auto" }}>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 30, fontWeight: 800 }}>Add Timesheet</div>
         </div>
-      </div>
 
-      <main style={{ width: "100%", padding: "32px 24px 40px" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gap: 24 }}>
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-                Create Time Report
-              </div>
-              <div style={{ marginTop: 4, fontSize: 24, fontWeight: 700 }}>Time Report Summary</div>
-              <div style={{ marginTop: 4, fontSize: 14, color: "#64748b" }}>John Smith</div>
-            </div>
-
-            <div style={{ padding: 20, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-              {[
-                ["Empl ID", "123123"],
-                ["Period End Date", "11/04/2026"],
-                ["Time Report ID", "NEXT"],
-                ["Version", "Original"],
-                ["GL Business Unit", "GB014"],
-                ["Operating Unit", "1035"],
-                ["Finance Department", "23405"],
-                ["Service Type", "120"],
-                ["Job Code", "201"],
-                ["Tax Location Code", ""],
-              ].map(([label, value]) => (
-                <div key={label} style={{ borderRadius: 16, border: "1px solid #e2e8f0", background: "#f8fafc", padding: 16 }}>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-                  <div style={{ marginTop: 4, fontSize: 14, fontWeight: 700 }}>{value || "—"}</div>
+        <div style={panelStyle()}>
+          <div style={{ padding: 22, borderBottom: "1px solid #e5e7eb" }}>
+            <div style={{ display: "flex", gap: 18, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 280 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={stepCircleStyle(step === 1, step > 1)}>1</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: step === 1 ? "#0f172a" : "#94a3b8" }}>Select Day(s)</div>
                 </div>
-              ))}
-            </div>
-
-            <div style={{ padding: "0 20px 20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8", marginBottom: 12 }}>Attachments</div>
-              <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: "#475569" }}>Comment</div>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                placeholder="Add a note about this time report..."
-                style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
-              />
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#475569" }}>
-                <input type="checkbox" />
-                <span>Show descriptions</span>
+                <div style={{ height: 2, flex: 1, background: step > 1 ? "#cfe0ff" : "#e5e7eb" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={stepCircleStyle(step === 2, step > 2)}>2</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: step === 2 ? "#0f172a" : "#94a3b8" }}>Add Entries</div>
+                </div>
+                <div style={{ height: 2, flex: 1, background: step > 2 ? "#cfe0ff" : "#e5e7eb" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={stepCircleStyle(step === 3, false)}>3</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: step === 3 ? "#0f172a" : "#94a3b8" }}>Review &amp; Save</div>
+                </div>
               </div>
             </div>
-          </section>
+          </div>
 
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>Project Hours Details</div>
-              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                Enter project time by day, then total is calculated for the row.
-              </div>
-            </div>
+          <div style={{ padding: 22 }}>
+            {step === 1 && (
+              <div>
+                <div style={{ marginBottom: 8, fontSize: 22, fontWeight: 800 }}>Step 1: Select Day(s)</div>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>Choose the days you want to add time for.</div>
 
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: 1280 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                    gap: 0,
-                    padding: "10px 12px",
-                    borderBottom: "1px solid #e2e8f0",
-                    background: "#f8fafc",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  {["Project", "Activity", "Source Type", "Category", "Project Subcategory", "Payroll Category", "Billing Action"].map((col) => (
-                    <div key={col} style={{ padding: "0 4px" }}>
-                      {col}
-                    </div>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  {weekDays.map((d) => (
+                    <DayPill
+                      key={d.key}
+                      label={d.label}
+                      dateLabel={d.dateLabel}
+                      selected={selectedDays.includes(d.key)}
+                      onClick={() => toggleDay(d.key)}
+                    />
                   ))}
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ textAlign: "center", padding: "0 4px" }}>
-                      {d.label}
-                    </div>
-                  ))}
-                  <div style={{ textAlign: "center", padding: "0 4px" }}>Total</div>
-                  <div />
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                    alignItems: "center",
-                    padding: "12px 12px",
-                  }}
-                >
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.project} onChange={(e) => setProjectHours((p) => ({ ...p, project: e.target.value }))}>
-                      <option value="">Select</option>
-                      {projects.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.activity} onChange={(e) => setProjectHours((p) => ({ ...p, activity: e.target.value }))}>
-                      <option value="">Select</option>
-                      {tasks.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.sourceType} onChange={(e) => setProjectHours((p) => ({ ...p, sourceType: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.category} onChange={(e) => setProjectHours((p) => ({ ...p, category: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.subcategory} onChange={(e) => setProjectHours((p) => ({ ...p, subcategory: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.payrollCategory} onChange={(e) => setProjectHours((p) => ({ ...p, payrollCategory: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.billingAction} onChange={(e) => setProjectHours((p) => ({ ...p, billingAction: e.target.value }))}>
-                      {billingActions.map((a) => (
-                        <option key={a} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ padding: "0 4px" }}>
-                      <input
-                        style={{ ...inputStyle(), textAlign: "center" }}
-                        value={projectHours[d.key]}
-                        onChange={(e) => setProjectHours((p) => ({ ...p, [d.key]: e.target.value }))}
-                        placeholder="0.0"
-                      />
-                    </div>
-                  ))}
-
-                  <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                  <div style={{ textAlign: "right" }}>+</div>
-                </div>
-
-                <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px", fontSize: 14, color: "#475569" }}>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ gridColumn: "span 8", textAlign: "right", paddingRight: 12, fontWeight: 600 }}>
-                      Total Project Related Hours:
-                    </div>
-                    {dayLabels.map((d) => (
-                      <div key={d.key} style={{ textAlign: "center" }}>
-                        {parseHours(projectHours[d.key]).toFixed(2)}
-                      </div>
-                    ))}
-                    <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                    <div />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>Internal and Non-Worked hours details</div>
-              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                Use these rows for leave, training, and internal time.
-              </div>
-            </div>
-
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: 1100 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                    padding: "10px 12px",
-                    background: "#f8fafc",
-                    borderBottom: "1px solid #e2e8f0",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  <div>Description</div>
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ textAlign: "center" }}>
-                      {d.label}
-                    </div>
-                  ))}
-                  <div style={{ textAlign: "center" }}>Total</div>
-                </div>
-
-                {Object.entries(nonWorked).map(([label, values]) => {
-                  const total = sumDays(values);
-                  return (
-                    <div
-                      key={label}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid #e2e8f0",
-                        fontSize: 14,
+                <div style={{ marginTop: 18 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#64748b", marginBottom: 10 }}>Quick Select</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <QuickButton label="Mon - Fri" onClick={() => selectOnly(["mo", "tu", "we", "th", "fr"])} />
+                    <QuickButton label="This Week" onClick={() => selectOnly(["su", "mo", "tu", "we", "th", "fr", "sa"])} />
+                    <QuickButton
+                      label="Today"
+                      onClick={() => {
+                        const map: DayKey[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
+                        selectOnly([map[new Date().getDay()]]);
                       }}
-                    >
-                      <div>{label}</div>
-                      {dayLabels.map((d) => (
-                        <div key={d.key} style={{ padding: "0 4px" }}>
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div>
+                <div style={{ marginBottom: 8, fontSize: 22, fontWeight: 800 }}>Step 2: Add Entries</div>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>
+                  Add one or more rows for the day(s) you selected.
+                </div>
+
+                <div style={{ display: "grid", gap: 14 }}>
+                  {entries.map((entry, index) => (
+                    <div key={entry.id} style={{ border: "1px solid #e5e7eb", borderRadius: 20, padding: 16, background: "#fbfdff" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
+                        <div style={{ fontWeight: 800 }}>Entry {index + 1}</div>
+                        <button type="button" style={buttonStyle("outline")} onClick={() => removeEntry(entry.id)}>
+                          Remove
+                        </button>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "110px 1.1fr 1.1fr 140px 110px", gap: 12 }}>
+                        <div>
+                          <div style={labelStyle()}>Day</div>
+                          <select
+                            style={fieldStyle()}
+                            value={entry.day}
+                            onChange={(e) => updateEntry(entry.id, { day: e.target.value as DayKey })}
+                          >
+                            {selectedDays.map((day) => (
+                              <option key={day} value={day}>
+                                {formatDayName(day)}
+                              </option>
+                            ))}
+                            {selectedDays.length === 0 && <option value="mo">No day selected</option>}
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={labelStyle()}>Project</div>
+                          <select
+                            style={fieldStyle()}
+                            value={entry.project}
+                            onChange={(e) => updateEntry(entry.id, { project: e.target.value })}
+                          >
+                            <option value="">Select project</option>
+                            {projects.map((project) => (
+                              <option key={project} value={project}>
+                                {project}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={labelStyle()}>Task</div>
+                          <select
+                            style={fieldStyle()}
+                            value={entry.task}
+                            onChange={(e) => updateEntry(entry.id, { task: e.target.value })}
+                          >
+                            <option value="">Select task</option>
+                            {tasks.map((task) => (
+                              <option key={task} value={task}>
+                                {task}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={labelStyle()}>Time Code</div>
+                          <select
+                            style={fieldStyle()}
+                            value={entry.timeCode}
+                            onChange={(e) => updateEntry(entry.id, { timeCode: e.target.value })}
+                          >
+                            {timeCodes.map((tc) => (
+                              <option key={tc.code} value={tc.code}>
+                                {tc.code}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={labelStyle()}>Hours</div>
                           <input
-                            style={{ ...inputStyle(), textAlign: "center" }}
-                            value={values[d.key]}
-                            onChange={(e) =>
-                              setNonWorked((prev) => ({
-                                ...prev,
-                                [label]: { ...prev[label], [d.key]: e.target.value },
-                              }))
-                            }
+                            style={{ ...fieldStyle(), textAlign: "center" }}
+                            inputMode="decimal"
                             placeholder="0.0"
+                            value={entry.hours}
+                            onChange={(e) => updateEntry(entry.id, { hours: e.target.value })}
                           />
                         </div>
-                      ))}
-                      <div style={{ textAlign: "center", fontWeight: 700 }}>{total.toFixed(2)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+                      </div>
 
-          
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button style={buttonStyle("primary")} onClick={submitAdd}>
-              Submit
+                      <div style={{ marginTop: 12 }}>
+                        <div style={labelStyle()}>Notes</div>
+                        <input
+                          style={fieldStyle()}
+                          placeholder="Optional note for this entry"
+                          value={entry.notes}
+                          onChange={(e) => updateEntry(entry.id, { notes: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button type="button" onClick={addEntry} style={buttonStyle("soft")}>+ Add Entry</button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div>
+                <div style={{ marginBottom: 8, fontSize: 22, fontWeight: 800 }}>Step 3: Review &amp; Save</div>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>
+                  Review everything before you submit.
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 18 }}>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 18, padding: 16, background: "#f8fbff" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700 }}>Selected days</div>
+                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{selectedDays.length}</div>
+                  </div>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 18, padding: 16, background: "#f8fbff" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700 }}>Entries</div>
+                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{entries.length}</div>
+                  </div>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 18, padding: 16, background: "#f8fbff" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700 }}>Total hours</div>
+                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{totals.total.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                <div style={{ overflowX: "auto", border: "1px solid #e5e7eb", borderRadius: 18 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 780, background: "white" }}>
+                    <thead>
+                      <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Day</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Project</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Task</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Code</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Hours</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entries.map((entry) => (
+                        <tr key={entry.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                          <td style={{ padding: 14 }}>{formatDayName(entry.day)}</td>
+                          <td style={{ padding: 14 }}>{entry.project || "—"}</td>
+                          <td style={{ padding: 14 }}>{entry.task || "—"}</td>
+                          <td style={{ padding: 14 }}>{entry.timeCode}</td>
+                          <td style={{ padding: 14, fontWeight: 700 }}>{parseHours(entry.hours).toFixed(2)}</td>
+                          <td style={{ padding: 14 }}>{entry.notes || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ marginTop: 18, border: "1px solid #e5e7eb", borderRadius: 18, padding: 16, background: "#fbfdff" }}>
+                  <div style={{ fontWeight: 800, marginBottom: 12 }}>Hours by day</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 10 }}>
+                    {dayOrder.map((day) => (
+                      <div key={day.key} style={{ textAlign: "center", border: "1px solid #e5e7eb", borderRadius: 14, padding: 10 }}>
+                        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700 }}>{day.label}</div>
+                        <div style={{ marginTop: 4, fontWeight: 800 }}>{totals.byDay[day.key].toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ padding: 22, borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <button type="button" style={buttonStyle("outline")} onClick={() => setStep((s) => Math.max(1, (s - 1) as 1 | 2 | 3))} disabled={step === 1}>
+              Back
             </button>
-            <button style={buttonStyle("outline")} onClick={clearAll}>
-              Cancel
-            </button>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                style={buttonStyle("soft")}
+                onClick={() => {
+                  setSelectedDays(["mo", "tu", "we", "th", "fr"]);
+                  setEntries([
+                    {
+                      id: 1,
+                      day: "mo",
+                      project: "",
+                      task: "",
+                      timeCode: "DEV",
+                      hours: "",
+                      notes: "",
+                    },
+                  ]);
+                  setStep(1);
+                }}
+              >
+                Reset
+              </button>
+
+              {step < 3 ? (
+                <button type="button" style={buttonStyle("primary")} onClick={() => setStep((s) => ((s + 1) as 1 | 2 | 3))} disabled={nextDisabled}>
+                  Next
+                </button>
+              ) : (
+                <button type="button" style={buttonStyle("primary")} onClick={saveTimesheet}>
+                  Review Save
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
