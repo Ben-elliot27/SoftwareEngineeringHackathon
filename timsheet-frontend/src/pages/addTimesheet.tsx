@@ -1,7 +1,19 @@
 import React, { useMemo, useState } from "react";
+import {
+  approveTimesheet,
+  createTimesheet,
+  listTimeCodes,
+  listTimesheets,
+  listUsers,
+  rejectTimesheet,
+  type EntryStatus,
+  type TimeCode,
+  type TimesheetEntry,
+  type User,
+} from "../lib/api";
+import { useAuthSession } from "../lib/useAuthSession";
 
-type DayKey = "su" | "mo" | "tu" | "we" | "th" | "fr" | "sa";
-type Status = "Pending" | "Approved" | "Rejected";
+type UiStatus = "Pending" | "Approved" | "Rejected";
 
 type TimesheetRow = {
   id: number;
@@ -11,547 +23,286 @@ type TimesheetRow = {
   task: string;
   timeCode: string;
   hours: number;
-  status: Status;
+  status: UiStatus;
 };
 
-const dayLabels: { key: DayKey; label: string }[] = [
-  { key: "su", label: "Su" },
-  { key: "mo", label: "Mo" },
-  { key: "tu", label: "Tu" },
-  { key: "we", label: "We" },
-  { key: "th", label: "Th" },
-  { key: "fr", label: "Fr" },
-  { key: "sa", label: "Sa" },
-];
-
-const users = ["Camila Adams", "Mark Patel", "Liam Whitehead", "Sarah Lin"];
 const projects = ["Project A", "Project B", "Project C", "Client Portal", "Internal Ops"];
 const tasks = ["Development", "Testing", "Research", "Meetings", "Design", "Support"];
-const billingActions = ["Billable", "Non-billable"];
 
-const timeCodes = [
-  { code: "DEV", label: "Development" },
-  { code: "MTG", label: "Meetings" },
-  { code: "QA", label: "Testing / QA" },
-  { code: "DES", label: "Design" },
-  { code: "SUP", label: "Support" },
-  { code: "RES", label: "Research" },
-  { code: "VAC", label: "Vacation" },
-  { code: "SICK", label: "Sick Leave" },
-  { code: "TRN", label: "Training" },
-];
-
-const initialRows: TimesheetRow[] = [
-  { id: 1, date: "2024-04-24", user: "Camila Adams", project: "Project A", task: "Development", timeCode: "DEV", hours: 8, status: "Pending" },
-  { id: 2, date: "2024-04-23", user: "Mark Patel", project: "Project A", task: "Development", timeCode: "DEV", hours: 7.5, status: "Approved" },
-  { id: 3, date: "2024-04-23", user: "Mark Patel", project: "Project B", task: "Testing", timeCode: "QA", hours: 6, status: "Pending" },
-  { id: 4, date: "2024-04-22", user: "Liam Whitehead", project: "Project C", task: "Research", timeCode: "RES", hours: 5, status: "Approved" },
-  { id: 5, date: "2024-04-21", user: "Sarah Lin", project: "Project B", task: "Development", timeCode: "DEV", hours: 6.5, status: "Pending" },
-  { id: 6, date: "2024-04-21", user: "Sarah Lin", project: "Project A", task: "Development", timeCode: "DEV", hours: 6.5, status: "Rejected" },
-];
-
-function parseHours(value: string) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
+function toStatus(status: EntryStatus): UiStatus {
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending";
 }
 
-function sumDays(days: Record<DayKey, string>) {
-  return dayLabels.reduce((total, d) => total + parseHours(days[d.key]), 0);
-}
-
-function inputStyle(extra: React.CSSProperties = {}): React.CSSProperties {
+function toRow(entry: TimesheetEntry): TimesheetRow {
   return {
-    width: "100%",
-    borderRadius: 12,
-    border: "1px solid #d6dbe3",
-    background: "#fff",
-    padding: "10px 12px",
-    fontSize: 14,
-    outline: "none",
-    boxSizing: "border-box",
-    ...extra,
+    id: entry.id,
+    date: entry.entry_date,
+    user: entry.user?.name ?? `User #${entry.user_id}`,
+    project: entry.time_code?.code ?? `Time Code #${entry.time_code_id}`,
+    task: entry.description || "Timesheet entry",
+    timeCode: entry.time_code?.code ?? String(entry.time_code_id),
+    hours: entry.hours,
+    status: toStatus(entry.status),
   };
 }
 
-function selectStyle(extra: React.CSSProperties = {}): React.CSSProperties {
-  return {
-    ...inputStyle(),
-    height: 42,
-    ...extra,
-  };
-}
+function LoginView({ onLogin, error }: { onLogin: (email: string, password: string) => Promise<void>; error: string }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-function buttonStyle(variant: "primary" | "outline" | "danger" = "outline"): React.CSSProperties {
-  if (variant === "primary") {
-    return {
-      borderRadius: 12,
-      border: "1px solid #2563eb",
-      background: "#2563eb",
-      color: "white",
-      padding: "10px 16px",
-      fontWeight: 600,
-      cursor: "pointer",
-    };
-  }
-  if (variant === "danger") {
-    return {
-      borderRadius: 12,
-      border: "1px solid #fecaca",
-      background: "#fef2f2",
-      color: "#b91c1c",
-      padding: "10px 16px",
-      fontWeight: 600,
-      cursor: "pointer",
-    };
-  }
-  return {
-    borderRadius: 12,
-    border: "1px solid #cbd5e1",
-    background: "#fff",
-    color: "#334155",
-    padding: "10px 16px",
-    fontWeight: 600,
-    cursor: "pointer",
-  };
-}
-
-function StatCard({
-  label,
-  value,
-  background,
-}: {
-  label: string;
-  value: string;
-  background: string;
-}) {
   return (
-    <div style={{ borderRadius: 16, border: "1px solid #e2e8f0", background, padding: 16 }}>
-      <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-      <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{value}</div>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <form
+        className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          await onLogin(email, password);
+        }}
+      >
+        <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
+        <p className="mt-1 text-sm text-slate-500">Authenticate to create timesheet entries.</p>
+        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="add-timesheet-login-email">Email</label>
+        <input id="add-timesheet-login-email" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+        <label className="mt-3 block text-sm font-medium text-slate-700" htmlFor="add-timesheet-login-password">Password</label>
+        <input id="add-timesheet-login-password" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+        <button className="mt-5 w-full rounded-xl bg-slate-900 px-3 py-2 font-semibold text-white" type="submit">Sign in</button>
+      </form>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: Status }) {
-  const styles: Record<Status, React.CSSProperties> = {
-    Pending: { background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" },
-    Approved: { background: "#d1fae5", color: "#065f46", border: "1px solid #a7f3d0" },
-    Rejected: { background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" },
+function StatusBadge({ status }: { status: UiStatus }) {
+  const styles: Record<UiStatus, string> = {
+    Pending: "border-amber-200 bg-amber-50 text-amber-800",
+    Approved: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    Rejected: "border-rose-200 bg-rose-50 text-rose-800",
   };
 
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        borderRadius: 9999,
-        padding: "6px 12px",
-        fontSize: 13,
-        fontWeight: 600,
-        ...styles[status],
-      }}
-    >
-      {status}
-    </span>
-  );
+  return <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${styles[status]}`}>{status}</span>;
 }
 
 export default function AddTimesheet() {
-  const [rows, setRows] = useState<TimesheetRow[]>(initialRows);
+  const { loading: authLoading, isAuthenticated, signIn, token, user, logout, error: authError } = useAuthSession();
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [timeCodes, setTimeCodes] = useState<TimeCode[]>([]);
+  const [rows, setRows] = useState<TimesheetRow[]>([]);
   const [search, setSearch] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
-    user: "",
-    date: "",
-    project: "",
-    timeCode: "DEV",
-    task: "Development",
-    hours: "",
-    notes: "",
-  });
+  const [form, setForm] = useState({ userId: "", date: "", project: "", task: tasks[0], timeCodeId: "", hours: "", notes: "" });
 
-  const [projectHours, setProjectHours] = useState({
-    project: "",
-    activity: "",
-    sourceType: "10000",
-    category: "10100",
-    subcategory: "",
-    payrollCategory: "",
-    billingAction: "Billable",
-    su: "",
-    mo: "",
-    tu: "",
-    we: "",
-    th: "",
-    fr: "",
-    sa: "",
-  });
+  React.useEffect(() => {
+    if (!token || !user) return;
 
-  const [nonWorked, setNonWorked] = useState<Record<string, Record<DayKey, string>>>({
-    Administration: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    Training: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    Vacation: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    "Sick Leave": { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-  });
+    let cancelled = false;
+
+    Promise.all([
+      listTimeCodes(token),
+      listTimesheets(token),
+      user.role === "admin" ? listUsers(token).catch((loadError: unknown) => {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Unable to load all users; using your account only.");
+        }
+        return [user];
+      }) : Promise.resolve([user]),
+    ])
+      .then(([codes, entries, users]) => {
+        if (cancelled) return;
+        setTimeCodes(codes);
+        setRows(entries.map(toRow).sort((a, b) => b.date.localeCompare(a.date)));
+        setAllUsers(users);
+        setForm((prev) => ({
+          ...prev,
+          userId: prev.userId || String(user.id),
+          timeCodeId: prev.timeCodeId || (codes[0] ? String(codes[0].id) : ""),
+          project: prev.project || projects[0],
+        }));
+      })
+      .catch((loadError: unknown) => {
+        if (cancelled) return;
+        setError(loadError instanceof Error ? loadError.message : "Unable to load page data");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter((row) =>
-      [row.date, row.user, row.project, row.task, row.timeCode, row.status, String(row.hours)].some((v) =>
-        v.toLowerCase().includes(q)
-      )
-    );
-  }, [search, rows]);
+    return rows.filter((row) => [row.date, row.user, row.project, row.task, row.timeCode, row.status, String(row.hours)].join(" ").toLowerCase().includes(q));
+  }, [rows, search]);
 
-  const stats = useMemo(() => {
-    return {
-      pending: rows.filter((r) => r.status === "Pending").length,
-      approved: rows.filter((r) => r.status === "Approved").length,
-      rejected: rows.filter((r) => r.status === "Rejected").length,
-      hours: rows.reduce((sum, r) => sum + r.hours, 0),
-    };
-  }, [rows]);
+  const stats = useMemo(() => ({
+    pending: rows.filter((r) => r.status === "Pending").length,
+    approved: rows.filter((r) => r.status === "Approved").length,
+    rejected: rows.filter((r) => r.status === "Rejected").length,
+    hours: rows.reduce((sum, r) => sum + r.hours, 0),
+  }), [rows]);
 
-  const projectTotal = useMemo(() => sumDays(projectHours), [projectHours]);
+  if (authLoading) {
+    return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600">Loading session...</div>;
+  }
 
-  const approve = (id: number) => setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "Approved" } : r)));
-  const reject = (id: number) => setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "Rejected" } : r)));
+  if (!isAuthenticated || !token || !user) {
+    return <LoginView onLogin={signIn} error={authError} />;
+  }
 
-  const submitAdd = () => {
-    if (!form.user || !form.date || !form.project || !form.hours) return;
-    setRows((prev) => [
-      {
-        id: Date.now(),
-        user: form.user,
-        date: form.date,
-        project: form.project,
-        timeCode: form.timeCode,
-        task: form.task,
-        hours: Number(form.hours),
-        status: "Pending",
-      },
-      ...prev,
-    ]);
-    setForm({
-      user: "",
-      date: "",
-      project: "",
-      timeCode: "DEV",
-      task: "Development",
-      hours: "",
-      notes: "",
-    });
-  };
+  const canReview = user.role === "manager" || user.role === "admin";
+  const authToken = token;
 
-  const clearAll = () => {
-    setForm({
-      user: "",
-      date: "",
-      project: "",
-      timeCode: "DEV",
-      task: "Development",
-      hours: "",
-      notes: "",
-    });
-    setProjectHours({
-      project: "",
-      activity: "",
-      sourceType: "10000",
-      category: "10100",
-      subcategory: "",
-      payrollCategory: "",
-      billingAction: "Billable",
-      su: "",
-      mo: "",
-      tu: "",
-      we: "",
-      th: "",
-      fr: "",
-      sa: "",
-    });
-    setNonWorked({
-      Administration: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      Training: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      Vacation: { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-      "Sick Leave": { su: "", mo: "", tu: "", we: "", th: "", fr: "", sa: "" },
-    });
-  };
+  async function refreshRows() {
+    const data = await listTimesheets(authToken);
+    setRows(data.map(toRow).sort((a, b) => b.date.localeCompare(a.date)));
+  }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" }}>
-      <div
-        style={{
-          background: "linear-gradient(90deg, #d71920 0%, #c81d5a 50%, #6f2dbd 100%)",
-          color: "white",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 24px" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.8 }}>
-            CGI Timesheet Portal
+    <div className="min-h-screen bg-slate-100 p-4 text-slate-900">
+      <div className="mx-auto max-w-7xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Create Time Report</h1>
+            <p className="mt-1 text-sm text-slate-500">Submit new entries to the backend and track current approval status.</p>
           </div>
-          <h1 style={{ fontSize: 42, lineHeight: 1.1, margin: "12px 0 0", fontWeight: 700 }}>
-            Create Time Report
-          </h1>
-          <p style={{ margin: "12px 0 0", maxWidth: 760, fontSize: 16, opacity: 0.92 }}>
-            Enter project hours and non-worked hours in the same layout as your enterprise timesheet.
-          </p>
+          <button className="rounded-xl border border-slate-300 px-3 py-2 text-sm" onClick={logout}>Sign out</button>
         </div>
+
+        {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {feedback ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{feedback}</div> : null}
+
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="text-sm font-medium text-slate-700">User</label>
+              <select className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" value={form.userId} onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))} disabled={user.role === "employee"}>
+                {allUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Date</label>
+              <input className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Hours</label>
+              <input className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" type="number" min="0.25" max="24" step="0.25" value={form.hours} onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Project</label>
+              <select className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" value={form.project} onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}>
+                {projects.map((project) => <option key={project} value={project}>{project}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Task</label>
+              <select className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" value={form.task} onChange={(e) => setForm((f) => ({ ...f, task: e.target.value }))}>
+                {tasks.map((task) => <option key={task} value={task}>{task}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Time Code</label>
+              <select className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" value={form.timeCodeId} onChange={(e) => setForm((f) => ({ ...f, timeCodeId: e.target.value }))}>
+                {timeCodes.map((code) => <option key={code.id} value={code.id}>{code.code} - {code.description || "No description"}</option>)}
+              </select>
+            </div>
+          </div>
+          <label className="mt-4 block text-sm font-medium text-slate-700">Notes</label>
+          <textarea className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={4} />
+          <button
+            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            onClick={async () => {
+              setError("");
+              setFeedback("");
+              if (!form.userId || !form.timeCodeId || !form.date || !form.hours) {
+                setError("Please complete user, date, hours, and time code fields.");
+                return;
+              }
+
+              try {
+                await createTimesheet(authToken, {
+                  user_id: Number(form.userId),
+                  time_code_id: Number(form.timeCodeId),
+                  entry_date: form.date,
+                  hours: Number(form.hours),
+                  description: form.notes.trim() || `${form.project} - ${form.task}`,
+                });
+                setFeedback("Timesheet entry submitted.");
+                await refreshRows();
+              } catch (submitError: unknown) {
+                setError(submitError instanceof Error ? submitError.message : "Unable to submit entry");
+              }
+            }}
+          >
+            Save entry
+          </button>
+        </section>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-xs text-slate-500">Total hours</div><div className="mt-1 text-2xl font-bold">{stats.hours.toFixed(1)}</div></div>
+          <div className="rounded-2xl border border-slate-200 bg-amber-50 p-4"><div className="text-xs text-slate-500">Pending</div><div className="mt-1 text-2xl font-bold">{stats.pending}</div></div>
+          <div className="rounded-2xl border border-slate-200 bg-emerald-50 p-4"><div className="text-xs text-slate-500">Approved</div><div className="mt-1 text-2xl font-bold">{stats.approved}</div></div>
+          <div className="rounded-2xl border border-slate-200 bg-rose-50 p-4"><div className="text-xs text-slate-500">Rejected</div><div className="mt-1 text-2xl font-bold">{stats.rejected}</div></div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Recent entries</h2>
+            <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Search entries..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="space-y-3">
+            {filteredRows.map((row) => (
+              <div key={row.id} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[140px_180px_1fr_120px_220px] md:items-center">
+                <div>
+                  <div className="text-xs text-slate-500">Date</div>
+                  <div className="text-sm font-medium">{row.date}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">User</div>
+                  <div className="text-sm font-medium">{row.user}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Work</div>
+                  <div className="text-sm font-medium">{row.project}</div>
+                  <div className="text-xs text-slate-500">{row.task}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Hours</div>
+                  <div className="text-sm font-medium">{row.hours}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={row.status} />
+                  {canReview ? (
+                    <>
+                      <button className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700" onClick={async () => {
+                        setError("");
+                        try {
+                          await approveTimesheet(authToken, row.id);
+                          await refreshRows();
+                        } catch (actionError: unknown) {
+                          setError(actionError instanceof Error ? actionError.message : "Unable to approve");
+                        }
+                      }}>Approve</button>
+                      <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700" onClick={async () => {
+                        setError("");
+                        try {
+                          await rejectTimesheet(authToken, row.id, "Rejected from add-timesheet view");
+                          await refreshRows();
+                        } catch (actionError: unknown) {
+                          setError(actionError instanceof Error ? actionError.message : "Unable to reject");
+                        }
+                      }}>Reject</button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
-
-      <main style={{ width: "100%", padding: "32px 24px 40px" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gap: 24 }}>
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-                Create Time Report
-              </div>
-              <div style={{ marginTop: 4, fontSize: 24, fontWeight: 700 }}>Time Report Summary</div>
-              <div style={{ marginTop: 4, fontSize: 14, color: "#64748b" }}>John Smith</div>
-            </div>
-
-            <div style={{ padding: 20, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-              {[
-                ["Empl ID", "123123"],
-                ["Period End Date", "11/04/2026"],
-                ["Time Report ID", "NEXT"],
-                ["Version", "Original"],
-                ["GL Business Unit", "GB014"],
-                ["Operating Unit", "1035"],
-                ["Finance Department", "23405"],
-                ["Service Type", "120"],
-                ["Job Code", "201"],
-                ["Tax Location Code", ""],
-              ].map(([label, value]) => (
-                <div key={label} style={{ borderRadius: 16, border: "1px solid #e2e8f0", background: "#f8fafc", padding: 16 }}>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-                  <div style={{ marginTop: 4, fontSize: 14, fontWeight: 700 }}>{value || "—"}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ padding: "0 20px 20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8", marginBottom: 12 }}>Attachments</div>
-              <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: "#475569" }}>Comment</div>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                placeholder="Add a note about this time report..."
-                style={{ ...inputStyle(), minHeight: 110, resize: "vertical" }}
-              />
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#475569" }}>
-                <input type="checkbox" />
-                <span>Show descriptions</span>
-              </div>
-            </div>
-          </section>
-
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>Project Hours Details</div>
-              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                Enter project time by day, then total is calculated for the row.
-              </div>
-            </div>
-
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: 1280 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                    gap: 0,
-                    padding: "10px 12px",
-                    borderBottom: "1px solid #e2e8f0",
-                    background: "#f8fafc",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  {["Project", "Activity", "Source Type", "Category", "Project Subcategory", "Payroll Category", "Billing Action"].map((col) => (
-                    <div key={col} style={{ padding: "0 4px" }}>
-                      {col}
-                    </div>
-                  ))}
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ textAlign: "center", padding: "0 4px" }}>
-                      {d.label}
-                    </div>
-                  ))}
-                  <div style={{ textAlign: "center", padding: "0 4px" }}>Total</div>
-                  <div />
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                    alignItems: "center",
-                    padding: "12px 12px",
-                  }}
-                >
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.project} onChange={(e) => setProjectHours((p) => ({ ...p, project: e.target.value }))}>
-                      <option value="">Select</option>
-                      {projects.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.activity} onChange={(e) => setProjectHours((p) => ({ ...p, activity: e.target.value }))}>
-                      <option value="">Select</option>
-                      {tasks.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.sourceType} onChange={(e) => setProjectHours((p) => ({ ...p, sourceType: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.category} onChange={(e) => setProjectHours((p) => ({ ...p, category: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.subcategory} onChange={(e) => setProjectHours((p) => ({ ...p, subcategory: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <input style={inputStyle()} value={projectHours.payrollCategory} onChange={(e) => setProjectHours((p) => ({ ...p, payrollCategory: e.target.value }))} />
-                  </div>
-                  <div style={{ padding: "0 4px" }}>
-                    <select style={selectStyle()} value={projectHours.billingAction} onChange={(e) => setProjectHours((p) => ({ ...p, billingAction: e.target.value }))}>
-                      {billingActions.map((a) => (
-                        <option key={a} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ padding: "0 4px" }}>
-                      <input
-                        style={{ ...inputStyle(), textAlign: "center" }}
-                        value={projectHours[d.key]}
-                        onChange={(e) => setProjectHours((p) => ({ ...p, [d.key]: e.target.value }))}
-                        placeholder="0.0"
-                      />
-                    </div>
-                  ))}
-
-                  <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                  <div style={{ textAlign: "right" }}>+</div>
-                </div>
-
-                <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px", fontSize: 14, color: "#475569" }}>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "120px 120px 120px 110px 150px 140px 130px repeat(7, 78px) 80px 60px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ gridColumn: "span 8", textAlign: "right", paddingRight: 12, fontWeight: 600 }}>
-                      Total Project Related Hours:
-                    </div>
-                    {dayLabels.map((d) => (
-                      <div key={d.key} style={{ textAlign: "center" }}>
-                        {parseHours(projectHours[d.key]).toFixed(2)}
-                      </div>
-                    ))}
-                    <div style={{ textAlign: "center", fontWeight: 700 }}>{projectTotal.toFixed(2)}</div>
-                    <div />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section style={{ borderRadius: 24, border: "1px solid #e2e8f0", background: "#fff", overflow: "hidden" }}>
-            <div style={{ padding: 20, borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>Internal and Non-Worked hours details</div>
-              <div style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
-                Use these rows for leave, training, and internal time.
-              </div>
-            </div>
-
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: 1100 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                    padding: "10px 12px",
-                    background: "#f8fafc",
-                    borderBottom: "1px solid #e2e8f0",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  <div>Description</div>
-                  {dayLabels.map((d) => (
-                    <div key={d.key} style={{ textAlign: "center" }}>
-                      {d.label}
-                    </div>
-                  ))}
-                  <div style={{ textAlign: "center" }}>Total</div>
-                </div>
-
-                {Object.entries(nonWorked).map(([label, values]) => {
-                  const total = sumDays(values);
-                  return (
-                    <div
-                      key={label}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "280px repeat(7, 78px) 80px",
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid #e2e8f0",
-                        fontSize: 14,
-                      }}
-                    >
-                      <div>{label}</div>
-                      {dayLabels.map((d) => (
-                        <div key={d.key} style={{ padding: "0 4px" }}>
-                          <input
-                            style={{ ...inputStyle(), textAlign: "center" }}
-                            value={values[d.key]}
-                            onChange={(e) =>
-                              setNonWorked((prev) => ({
-                                ...prev,
-                                [label]: { ...prev[label], [d.key]: e.target.value },
-                              }))
-                            }
-                            placeholder="0.0"
-                          />
-                        </div>
-                      ))}
-                      <div style={{ textAlign: "center", fontWeight: 700 }}>{total.toFixed(2)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button style={buttonStyle("primary")} onClick={submitAdd}>
-              Submit
-            </button>
-            <button style={buttonStyle("outline")} onClick={clearAll}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      </main>
     </div>
   );
 }

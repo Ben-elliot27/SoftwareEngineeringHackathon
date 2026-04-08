@@ -39,12 +39,12 @@ export default function NavBar() {
           </NavLink>
 
           <NavLink
-            to="/director-page"
+            to="/approvals"
             className={({ isActive }) =>
               `${baseClass} ${isActive ? activeClass : inactiveClass}`
             }
           >
-            Director Page
+            Approvals
           </NavLink>
         </nav>
       </div>

@@ -11,6 +11,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<TimesheetWebsite />} />
         <Route path="/add-timesheet" element={<AddTimesheet />} />
+        <Route path="/approvals" element={<TimesheetApprovals />} />
         <Route path="/director-page" element={<TimesheetApprovals />} />
       </Routes>
     </BrowserRouter>
