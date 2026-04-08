@@ -255,9 +255,12 @@ export default function TimesheetApprovals() {
               setError("");
               try {
                 const results = await Promise.allSettled(pendingSelected.map((item) => approveTimesheet(token, item.id)));
-                const succeededIds = pendingSelected
-                  .filter((_, index) => results[index].status === "fulfilled")
-                  .map((item) => item.id);
+                const succeededIds = pendingSelected.reduce<number[]>((ids, item, index) => {
+                  if (results[index].status === "fulfilled") {
+                    ids.push(item.id);
+                  }
+                  return ids;
+                }, []);
                 const failedCount = results.length - succeededIds.length;
 
                 setSelected((current) => current.filter((id) => !succeededIds.includes(id)));
@@ -280,9 +283,12 @@ export default function TimesheetApprovals() {
               setError("");
               try {
                 const results = await Promise.allSettled(pendingSelected.map((item) => rejectTimesheet(token, item.id, "Rejected in bulk")));
-                const succeededIds = pendingSelected
-                  .filter((_, index) => results[index].status === "fulfilled")
-                  .map((item) => item.id);
+                const succeededIds = pendingSelected.reduce<number[]>((ids, item, index) => {
+                  if (results[index].status === "fulfilled") {
+                    ids.push(item.id);
+                  }
+                  return ids;
+                }, []);
                 const failedCount = results.length - succeededIds.length;
 
                 setSelected((current) => current.filter((id) => !succeededIds.includes(id)));
