@@ -10,7 +10,37 @@ type Entry = {
   timeCode: string;
   hours: string;
   notes: string;
-  workType?: "internal" | "non-work";
+  workType?:
+    | "Administration"
+    | "Training"
+    | "Training AI"
+    | "Proposal"
+    | "In Between Assignments"
+    | "Reservist Leave"
+    | "Statutory Holiday"
+    | "Vacation"
+    | "Compensatory Time"
+    | "Sick Leave"
+    | "Exam/Study Leave"
+    | "Public Services Leave"
+    | "Floating/DeferredHoliday Taken"
+    | "Bereavement Leave"
+    | "Jury Duty Leave"
+    | "Military Leave"
+    | "Paternity Leave"
+    | "Family Support Leave"
+    | "Administrative Leave"
+    | "Unpaid Leave"
+    | "Unpaid Sick Leave"
+    | "Grad Return to Work Off Days"
+    | "Carer Leave"
+    | "Prenatal Exam/Course"
+    | "Partner Prenatal Assist Leave"
+    | "Unpaid Parental Leave"
+    | "Strike"
+    | "Union Duties Leave"
+    | "Defer Statutory Holiday"
+    | "Parental Bereavement Leave";
 };
 
 const dayOrder: { key: DayKey; label: string }[] = [
@@ -218,6 +248,39 @@ function QuickButton({ label, onClick }: { label: string; onClick: () => void })
   );
 }
 
+const leaveOptions = [
+  "Administration",
+  "Training",
+  "Training AI",
+  "Proposal",
+  "In Between Assignments",
+  "Reservist Leave",
+  "Statutory Holiday",
+  "Vacation",
+  "Compensatory Time",
+  "Sick Leave",
+  "Exam/Study Leave",
+  "Public Services Leave",
+  "Floating/DeferredHoliday Taken",
+  "Bereavement Leave",
+  "Jury Duty Leave",
+  "Military Leave",
+  "Paternity Leave",
+  "Family Support Leave",
+  "Administrative Leave",
+  "Unpaid Leave",
+  "Unpaid Sick Leave",
+  "Grad Return to Work Off Days",
+  "Carer Leave",
+  "Prenatal Exam/Course",
+  "Partner Prenatal Assist Leave",
+  "Unpaid Parental Leave",
+  "Strike",
+  "Union Duties Leave",
+  "Defer Statutory Holiday",
+  "Parental Bereavement Leave",
+] as const;
+
 export default function AddTimesheet() {
   const weekDays = useMemo(() => getWeekDays(), []);
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -231,6 +294,7 @@ export default function AddTimesheet() {
       timeCode: "DEV",
       hours: "",
       notes: "",
+      workType: undefined,
     },
   ]);
 
@@ -265,6 +329,7 @@ export default function AddTimesheet() {
         timeCode: "DEV",
         hours: "",
         notes: "",
+        workType: undefined,
       },
     ]);
   };
@@ -274,7 +339,6 @@ export default function AddTimesheet() {
   };
 
   const saveTimesheet = () => {
-    // Hook this into your API or parent state.
     console.log({ selectedDays, entries, totals });
     alert("Timesheet ready to save. Connect this button to your API.");
   };
@@ -282,12 +346,28 @@ export default function AddTimesheet() {
   const nextDisabled = step === 1 && selectedDays.length === 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f4f7fb", padding: 24, color: "#0f172a" }}>
-      <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 30, fontWeight: 800 }}>Add Timesheet</div>
+    <div style={{ minHeight: "100vh", background: "#f4f7fb", color: "#0f172a" }}>
+      <div
+        style={{
+          width: "100%",
+          padding: "56px 24px 64px",
+          color: "white",
+          background: "linear-gradient(90deg, #d71920 0%, #c81d5a 50%, #6f2dbd 100%)",
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.8 }}>
+            CGI Timesheet Portal
+          </div>
+          <h1 style={{ marginTop: 16, fontSize: 52, lineHeight: 1.05, fontWeight: 800 }}>Add Timesheet</h1>
+          <p style={{ marginTop: 16, maxWidth: 680, fontSize: 16, lineHeight: 1.7, opacity: 0.92 }}>
+            Add your weekly hours quickly using the guided flow below.
+          </p>
         </div>
+      </div>
 
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "0 24px 24px" }}>
         <div style={panelStyle()}>
           <div style={{ padding: 22, borderBottom: "1px solid #e5e7eb" }}>
             <div style={{ display: "flex", gap: 18, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -348,159 +428,135 @@ export default function AddTimesheet() {
             {step === 2 && (
               <div>
                 <div style={{ marginBottom: 8, fontSize: 22, fontWeight: 800 }}>Step 2: Add Entries</div>
-                <div style={{ color: "#64748b", marginBottom: 18 }}>
-                  Add one or more rows for the day(s) you selected.
-                </div>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>Add one or more rows for the day(s) you selected.</div>
 
                 <div style={{ display: "grid", gap: 14 }}>
-                  {entries.map((entry, index) => (
-                    <div key={entry.id} style={{ border: "1px solid #e5e7eb", borderRadius: 20, padding: 16, background: "#fbfdff" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
-                        <div style={{ fontWeight: 800 }}>Entry {index + 1}</div>
-                        <button type="button" style={buttonStyle("outline")} onClick={() => removeEntry(entry.id)}>
-                          Remove
-                        </button>
-                      </div>
+                  {entries.map((entry, index) => {
+                    const workTypeValue = entry.workType || "";
+                    const isNonWork = !!entry.workType;
 
-                      <div style={{ display: "grid", gridTemplateColumns: "110px 1.1fr 1.1fr 140px 110px", gap: 12 }}>
-                        <div>
-                          <div style={labelStyle()}>Day</div>
+                    return (
+                      <div key={entry.id} style={{ border: "1px solid #e5e7eb", borderRadius: 20, padding: 16, background: "#fbfdff" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
+                          <div style={{ fontWeight: 800 }}>Entry {index + 1}</div>
+                          <button type="button" style={buttonStyle("outline")} onClick={() => removeEntry(entry.id)}>
+                            Remove
+                          </button>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "110px 1.1fr 1.1fr 140px 110px", gap: 12 }}>
+                          <div>
+                            <div style={labelStyle()}>Day</div>
+                            <select style={fieldStyle()} value={entry.day} onChange={(e) => updateEntry(entry.id, { day: e.target.value as DayKey })}>
+                              {selectedDays.length > 0 ? (
+                                selectedDays.map((day) => (
+                                  <option key={day} value={day}>
+                                    {formatDayName(day)}
+                                  </option>
+                                ))
+                              ) : (
+                                <option value="mo">No day selected</option>
+                              )}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div style={labelStyle()}>Project</div>
+                            <select
+                              style={fieldStyle()}
+                              value={entry.project}
+                              disabled={isNonWork}
+                              onChange={(e) => updateEntry(entry.id, { project: e.target.value })}
+                            >
+                              <option value="">Select project</option>
+                              {projects.map((project) => (
+                                <option key={project} value={project}>
+                                  {project}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div style={labelStyle()}>Task</div>
+                            <select
+                              style={fieldStyle()}
+                              value={entry.task}
+                              disabled={isNonWork}
+                              onChange={(e) => updateEntry(entry.id, { task: e.target.value })}
+                            >
+                              <option value="">Select task</option>
+                              {tasks.map((task) => (
+                                <option key={task} value={task}>
+                                  {task}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div style={labelStyle()}>Time Code</div>
+                            <select style={fieldStyle()} value={entry.timeCode} onChange={(e) => updateEntry(entry.id, { timeCode: e.target.value })}>
+                              {timeCodes.map((tc) => (
+                                <option key={tc.code} value={tc.code}>
+                                  {tc.code}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div style={labelStyle()}>Hours</div>
+                            <input
+                              style={{ ...fieldStyle(), textAlign: "center" }}
+                              inputMode="decimal"
+                              placeholder="0.0"
+                              value={entry.hours}
+                              onChange={(e) => updateEntry(entry.id, { hours: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: 12 }}>
+                          <div style={labelStyle()}>Work Type</div>
                           <select
                             style={fieldStyle()}
-                            value={entry.day}
-                            onChange={(e) => updateEntry(entry.id, { day: e.target.value as DayKey })}
+                            value={workTypeValue}
+                            onChange={(e) => {
+                              const value = e.target.value as Entry["workType"];
+                              updateEntry(entry.id, {
+                                workType: value,
+                                ...(value ? { project: "", task: "" } : {}),
+                              });
+                            }}
                           >
-                            {selectedDays.map((day) => (
-                              <option key={day} value={day}>
-                                {formatDayName(day)}
+                            <option value="">Internal Hours</option>
+                            {leaveOptions.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
                               </option>
                             ))}
-                            {selectedDays.length === 0 && <option value="mo">No day selected</option>}
                           </select>
                         </div>
 
-                        <div>
-                          <div style={labelStyle()}>Project</div>
-                          <select
-                            style={fieldStyle()}
-                            value={entry.project}
-                            onChange={(e) => updateEntry(entry.id, { project: e.target.value })}
-                          >
-                            <option value="">Select project</option>
-                            {projects.map((project) => (
-                              <option key={project} value={project}>
-                                {project}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <div style={labelStyle()}>Task</div>
-                          <select
-                            style={fieldStyle()}
-                            value={entry.task}
-                            onChange={(e) => updateEntry(entry.id, { task: e.target.value })}
-                          >
-                            <option value="">Select task</option>
-                            {tasks.map((task) => (
-                              <option key={task} value={task}>
-                                {task}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <div style={labelStyle()}>Time Code</div>
-                          <select
-                            style={fieldStyle()}
-                            value={entry.timeCode}
-                            onChange={(e) => updateEntry(entry.id, { timeCode: e.target.value })}
-                          >
-                            {timeCodes.map((tc) => (
-                              <option key={tc.code} value={tc.code}>
-                                {tc.code}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <div style={labelStyle()}>Hours</div>
+                        <div style={{ marginTop: 12 }}>
+                          <div style={labelStyle()}>Notes</div>
                           <input
-                            style={{ ...fieldStyle(), textAlign: "center" }}
-                            inputMode="decimal"
-                            placeholder="0.0"
-                            value={entry.hours}
-                            onChange={(e) => updateEntry(entry.id, { hours: e.target.value })}
+                            style={fieldStyle()}
+                            placeholder="Optional note for this entry"
+                            value={entry.notes}
+                            onChange={(e) => updateEntry(entry.id, { notes: e.target.value })}
                           />
                         </div>
                       </div>
-
-                      <div style={{ position: "relative" }}>
-                        <label className="text-sm font-medium text-slate-700">Work Type</label>
-                        <select
-                          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-                          style={{
-                            position: "relative",
-                            zIndex: 10,
-                          }}
-                          value={entry.workType || ""}
-                          onChange={(e) =>
-                            updateEntry(entry.id, {
-                              workType: e.target.value as any,
-                            })
-                          }
-                        >
-                          <option value="Administration">Administration</option>
-                          <option value="Training">Training</option>
-                          <option value="Training AI">Training AI</option>
-                          <option value="Proposal">Proposal</option>
-                          <option value="In Between Assignments">In Between Assignments</option>
-                          <option value="Reservist Leave">Reservist Leave</option>
-                          <option value="Statutory Holiday">Statutory Holiday</option>
-                          <option value="Vacation">Vacation</option>
-                          <option value="Compensatory Time">Compensatory Time</option>
-                          <option value="Sick Leave">Sick Leave</option>
-                          <option value="Exam/Study Leave">Exam/Study Leave</option>
-                          <option value="Public Services Leave">Public Services Leave</option>
-                          <option value="Floating/DeferredHoliday Taken">Floating/DeferredHoliday Taken</option>
-                          <option value="Bereavement Leave">Bereavement Leave</option>
-                          <option value="Jury Duty Leave">Jury Duty Leave</option>
-                          <option value="Military Leave">Military Leave</option>
-                          <option value="Paternity Leave">Paternity Leave</option>
-                          <option value="Family Support Leave">Family Support Leave</option>
-                          <option value="Administrative Leave">Administrative Leave</option>
-                          <option value="Unpaid Leave">Unpaid Leave</option>
-                          <option value="Unpaid Sick Leave">Unpaid Sick Leave</option>
-                          <option value="Grad Return to Work Off Days">Grad Return to Work Off Days</option>
-                          <option value="Carer Leave">Carer Leave</option>
-                          <option value="Prenatal Exam/Course">Prenatal Exam/Course</option>
-                          <option value="Partner Prenatal Assist Leave">Partner Prenatal Assist Leave</option>
-                          <option value="Unpaid Parental Leave">Unpaid Parental Leave</option>
-                          <option value="Strike">Strike</option>
-                          <option value="Union Duties Leave">Union Duties Leave</option>
-                          <option value="Defer Statutory Holiday">Defer Statutory Holiday</option>
-                          <option value="Parental Bereavement Leave">Parental Bereavement Leave</option>
-                        </select>
-                      </div>
-
-                      <div style={{ marginTop: 12 }}>
-                        <div style={labelStyle()}>Notes</div>
-                        <input
-                          style={fieldStyle()}
-                          placeholder="Optional note for this entry"
-                          value={entry.notes}
-                          onChange={(e) => updateEntry(entry.id, { notes: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button type="button" onClick={addEntry} style={buttonStyle("soft")}>+ Add Entry</button>
+                  <button type="button" onClick={addEntry} style={buttonStyle("soft")}>
+                    + Add Entry
+                  </button>
                 </div>
               </div>
             )}
@@ -508,9 +564,7 @@ export default function AddTimesheet() {
             {step === 3 && (
               <div>
                 <div style={{ marginBottom: 8, fontSize: 22, fontWeight: 800 }}>Step 3: Review &amp; Save</div>
-                <div style={{ color: "#64748b", marginBottom: 18 }}>
-                  Review everything before you submit.
-                </div>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>Review everything before you submit.</div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 18 }}>
                   <div style={{ border: "1px solid #e5e7eb", borderRadius: 18, padding: 16, background: "#f8fbff" }}>
@@ -535,6 +589,7 @@ export default function AddTimesheet() {
                         <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Project</th>
                         <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Task</th>
                         <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Code</th>
+                        <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Work Type</th>
                         <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Hours</th>
                         <th style={{ padding: 14, fontSize: 12, color: "#64748b" }}>Notes</th>
                       </tr>
@@ -546,6 +601,7 @@ export default function AddTimesheet() {
                           <td style={{ padding: 14 }}>{entry.project || "—"}</td>
                           <td style={{ padding: 14 }}>{entry.task || "—"}</td>
                           <td style={{ padding: 14 }}>{entry.timeCode}</td>
+                          <td style={{ padding: 14 }}>{entry.workType || "Internal Hours"}</td>
                           <td style={{ padding: 14, fontWeight: 700 }}>{parseHours(entry.hours).toFixed(2)}</td>
                           <td style={{ padding: 14 }}>{entry.notes || "—"}</td>
                         </tr>
@@ -589,6 +645,7 @@ export default function AddTimesheet() {
                       timeCode: "DEV",
                       hours: "",
                       notes: "",
+                      workType: undefined,
                     },
                   ]);
                   setStep(1);
