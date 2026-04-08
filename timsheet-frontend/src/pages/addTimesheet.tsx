@@ -147,9 +147,10 @@ export default function AddTimesheet() {
   }
 
   const canReview = user.role === "manager" || user.role === "admin";
+  const authToken = token;
 
   async function refreshRows() {
-    const data = await listTimesheets(token);
+    const data = await listTimesheets(authToken);
     setRows(data.map(toRow).sort((a, b) => b.date.localeCompare(a.date)));
   }
 
@@ -215,7 +216,7 @@ export default function AddTimesheet() {
               }
 
               try {
-                await createTimesheet(token, {
+                await createTimesheet(authToken, {
                   user_id: Number(form.userId),
                   time_code_id: Number(form.timeCodeId),
                   entry_date: form.date,
@@ -272,7 +273,7 @@ export default function AddTimesheet() {
                       <button className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700" onClick={async () => {
                         setError("");
                         try {
-                          await approveTimesheet(token, row.id);
+                          await approveTimesheet(authToken, row.id);
                           await refreshRows();
                         } catch (actionError: unknown) {
                           setError(actionError instanceof Error ? actionError.message : "Unable to approve");
@@ -281,7 +282,7 @@ export default function AddTimesheet() {
                       <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700" onClick={async () => {
                         setError("");
                         try {
-                          await rejectTimesheet(token, row.id, "Rejected from add-timesheet view");
+                          await rejectTimesheet(authToken, row.id, "Rejected from add-timesheet view");
                           await refreshRows();
                         } catch (actionError: unknown) {
                           setError(actionError instanceof Error ? actionError.message : "Unable to reject");

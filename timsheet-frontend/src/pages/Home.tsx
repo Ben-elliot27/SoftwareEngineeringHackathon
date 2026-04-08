@@ -22,11 +22,6 @@ type TopHeaderProps = {
   onLogout: () => void;
 };
 
-type HeroStatProps = {
-  label: string;
-  value: string;
-};
-
 type SummaryCardProps = {
   label: string;
   value: string;
@@ -280,15 +275,6 @@ function TopHeader({ page, setPage, userName, onLogout }: TopHeaderProps) {
         </nav>
       </div>
     </header>
-  );
-}
-
-function HeroStat({ label, value }: HeroStatProps) {
-  return (
-    <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur">
-      <div className="text-sm font-medium text-white/75">{label}</div>
-      <div className="mt-2 text-3xl font-bold text-white">{value}</div>
-    </div>
   );
 }
 

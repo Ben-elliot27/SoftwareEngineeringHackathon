@@ -8,63 +8,63 @@ import {
   type User,
 } from "./api";
 
-type AuthState = {
-  token: string | null;
-  user: User | null;
-  loading: boolean;
-  error: string;
-};
-
 export function useAuthSession() {
-  const [state, setState] = useState<AuthState>({
-    token: getStoredToken(),
-    user: null,
-    loading: true,
-    error: "",
-  });
+  const initialToken = getStoredToken();
+  const [token, setToken] = useState<string | null>(initialToken);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(Boolean(initialToken));
+  const [error, setError] = useState("");
 
   const logout = useCallback(() => {
     clearToken();
-    setState({ token: null, user: null, loading: false, error: "" });
+    setToken(null);
+    setUser(null);
+    setLoading(false);
+    setError("");
   }, []);
 
   useEffect(() => {
-    if (!state.token) {
-      setState((prev) => ({ ...prev, user: null, loading: false }));
-      return;
-    }
+    if (!token) return;
 
     let cancelled = false;
 
-    getCurrentUser(state.token)
-      .then((user) => {
+    getCurrentUser(token)
+      .then((nextUser) => {
         if (cancelled) return;
-        setState((prev) => ({ ...prev, user, loading: false, error: "" }));
+        setUser(nextUser);
+        setError("");
       })
-      .catch((error: unknown) => {
+      .catch((err: unknown) => {
         if (cancelled) return;
-        const message = error instanceof Error ? error.message : "Authentication failed";
+        setError(err instanceof Error ? err.message : "Authentication failed");
         clearToken();
-        setState({ token: null, user: null, loading: false, error: message });
+        setToken(null);
+        setUser(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [state.token]);
+  }, [token]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const token = await login(email, password);
-    storeToken(token);
-    setState((prev) => ({ ...prev, token, loading: true, error: "" }));
+    const nextToken = await login(email, password);
+    storeToken(nextToken);
+    setLoading(true);
+    setToken(nextToken);
+    setError("");
   }, []);
 
   return {
-    token: state.token,
-    user: state.user,
-    loading: state.loading,
-    error: state.error,
-    isAuthenticated: Boolean(state.token && state.user),
+    token,
+    user,
+    loading,
+    error,
+    isAuthenticated: Boolean(token && user),
     signIn,
     logout,
   };
