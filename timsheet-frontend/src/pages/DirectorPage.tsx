@@ -256,7 +256,7 @@ export default function TimesheetApprovals() {
               try {
                 const results = await Promise.allSettled(pendingSelected.map((item) => approveTimesheet(token, item.id)));
                 const succeededIds = pendingSelected
-                  .filter((_, index) => results[index]?.status === "fulfilled")
+                  .filter((_, index) => results[index].status === "fulfilled")
                   .map((item) => item.id);
                 const failedCount = results.length - succeededIds.length;
 
@@ -281,7 +281,7 @@ export default function TimesheetApprovals() {
               try {
                 const results = await Promise.allSettled(pendingSelected.map((item) => rejectTimesheet(token, item.id, "Rejected in bulk")));
                 const succeededIds = pendingSelected
-                  .filter((_, index) => results[index]?.status === "fulfilled")
+                  .filter((_, index) => results[index].status === "fulfilled")
                   .map((item) => item.id);
                 const failedCount = results.length - succeededIds.length;
 

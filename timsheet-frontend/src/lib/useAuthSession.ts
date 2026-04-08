@@ -59,7 +59,6 @@ export function useAuthSession() {
       const nextToken = await login(email, password);
       storeToken(nextToken);
       setToken(nextToken);
-      setUser(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Authentication failed");
       clearToken();
